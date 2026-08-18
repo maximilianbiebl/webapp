@@ -44,7 +44,7 @@
       Freundschaftscodes sind beide 22 Zeichen lang.
     </p>
     <input type="text" id="code" placeholder="Code oder Link" autocomplete="off">
-    <button class="wide" id="go">Weiter</button>
+    <button class="wide" id="go">Einlösen</button>
     <p class="muted error hidden" id="err">Das sieht nicht nach einem gültigen Code aus.</p>
   </div>
 
@@ -56,12 +56,13 @@
   import { parseId } from "./shared.js";
   const field = document.getElementById("code");
   const error = document.getElementById("err");
-  // Welche Art von Code es ist, weiß die Seite nicht – beide sind 22 Zeichen.
-  // Die Gruppenseite prüft es und schickt weiter, wenn es keine Gruppe ist.
+  // Direkt in die Web-Version. Wer den Code gerade selbst eingetippt hat,
+  // braucht keine Seite, die ihm den Code zeigt – er will, dass etwas passiert.
+  // Ob Gruppe oder Freundschaft, findet die Web-Version selbst heraus.
   document.getElementById("go").addEventListener("click", () => {
     const id = parseId(field.value);
     error.classList.toggle("hidden", Boolean(id));
-    if (id) window.location.href = `g/?id=${id}`;
+    if (id) window.location.href = `app/?code=${id}`;
   });
   field.addEventListener("keydown", (e) => {
     if (e.key === "Enter") document.getElementById("go").click();

@@ -13,6 +13,7 @@ import {
   signOut, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where,
   parseId, buildLeaderboard, buildComparison, ID_LENGTH,
 } from "../shared.js";
+import { ask, say, askForText } from "./dialogs.js";
 
 const $ = (id) => document.getElementById(id);
 const show = (el, visible) => el.classList.toggle("hidden", !visible);
@@ -25,6 +26,15 @@ let me = null;
 let displayName = "";
 let range = 7;
 let sort = "reps";
+
+if (params.get("code") || params.get("join") || params.get("invite")) {
+  // Sonst steht da nur "Anmelden", und warum, weiss niemand.
+  const note = document.createElement("p");
+  note.className = "hint";
+  note.textContent =
+    "Du hast eine Einladung dabei. Melde dich an, dann wird sie gleich eingelöst.";
+  $("signIn").prepend(note);
+}
 
 if (!isConfigured) {
   show($("unconfigured"), true);
@@ -294,19 +304,18 @@ $("saveName").addEventListener("click", async () => {
 });
 
 $("newGroup").addEventListener("click", async () => {
-  const name = prompt("Wie soll die Gruppe heißen?");
-  if (!name || !name.trim()) return;
+  const entered = await askForText("Neue Gruppe", "Name der Gruppe", "Anlegen");
+  if (!entered) return;
+  const name = entered.slice(0, 40);
   const id = randomId();
   const now = Date.now();
   try {
-    await setDoc(doc(fb.db, "groups", id), {
-      name: name.trim().slice(0, 40), ownerUid: me.uid, createdAt: now,
-    });
-    await joinExisting(id, name.trim().slice(0, 40), now);
+    await setDoc(doc(fb.db, "groups", id), { name, ownerUid: me.uid, createdAt: now });
+    await joinExisting(id, name, now);
     await renderGroups();
     openGroup(id);
   } catch (error) {
-    alert(`Anlegen fehlgeschlagen: ${error.code || error.message}`);
+    await say("Anlegen fehlgeschlagen", error.code || error.message);
   }
 });
 
@@ -314,22 +323,36 @@ $("joinGroup").addEventListener("click", () => promptJoin());
 $("redeem").addEventListener("click", () => promptRedeem());
 
 async function promptJoin(prefill) {
-  const input = prefill || prompt("Gruppen-ID oder Link");
+  const input = prefill || await askForText("Gruppe beitreten", "Gruppen-ID oder Link", "Weiter");
   const id = parseId(input);
-  if (!id) return;
+  if (!id) {
+    if (input) await say("Ungültig", "Das sieht nicht nach einer Gruppen-ID aus.");
+    return;
+  }
   try {
     const snapshot = await getDoc(doc(fb.db, "groups", id));
     if (!snapshot.exists()) {
-      alert("Diese Gruppe gibt es nicht.");
+      await say("Nicht gefunden", "Zu diesem Code gibt es keine Gruppe.");
       return;
     }
-    const name = snapshot.data().name || "";
-    if (!confirm(`„${name}" beitreten?`)) return;
+    const name = snapshot.data().name || "Gruppe ohne Namen";
+    const memberDoc = await getDoc(doc(fb.db, "groups", id, "members", me.uid));
+    if (memberDoc.exists()) {
+      await say(name, "Da bist du schon dabei.");
+      openGroup(id);
+      return;
+    }
+    const yes = await ask(
+      "Gruppe beitreten",
+      `„${name}" beitreten? Deine Trainingszahlen erscheinen dann in der Bestenliste dieser Gruppe.`,
+      "Beitreten",
+    );
+    if (!yes) return;
     await joinExisting(id, name, Date.now());
     await renderGroups();
     openGroup(id);
   } catch (error) {
-    alert(`Beitreten fehlgeschlagen: ${error.code || error.message}`);
+    await say("Beitreten fehlgeschlagen", error.code || error.message);
   }
 }
 
@@ -343,26 +366,37 @@ async function joinExisting(groupId, groupName, now) {
 }
 
 async function promptRedeem(prefill) {
-  const input = prefill || prompt("Freundschaftscode oder Link");
+  const input = prefill || await askForText("Einladung einlösen", "Code oder Link", "Weiter");
   const inviteId = parseId(input);
-  if (!inviteId) return;
+  if (!inviteId) {
+    if (input) await say("Ungültig", "Das sieht nicht nach einem Einladungscode aus.");
+    return;
+  }
   try {
     const snapshot = await getDoc(doc(fb.db, "invites", inviteId));
     if (!snapshot.exists()) {
-      alert("Diese Einladung gibt es nicht.");
+      await say("Nicht gefunden", "Zu diesem Code gibt es keine Einladung.");
       return;
     }
     const invite = snapshot.data();
     if (invite.fromUid === me.uid) {
-      alert("Das ist deine eigene Einladung.");
+      await say("Deine eigene Einladung", "Diesen Code hast du selbst ausgestellt.");
       return;
     }
     if (invite.acceptedBy || invite.expiresAt < Date.now()) {
-      alert("Diese Einladung ist abgelaufen oder schon eingelöst.");
+      await say(
+        "Nicht mehr gültig",
+        "Diese Einladung ist abgelaufen oder wurde schon eingelöst. Lass dir eine neue schicken.",
+      );
       return;
     }
     const from = invite.fromDisplayName || "Jemand";
-    if (!confirm(`Mit ${from} verbinden? Ihr seht dann gegenseitig eure Zahlen.`)) return;
+    const yes = await ask(
+      `Einladung von ${from}`,
+      `Mit ${from} verbinden? Ihr seht dann gegenseitig eure Trainingszahlen.`,
+      "Verbinden",
+    );
+    if (!yes) return;
     const uids = [me.uid, invite.fromUid].sort();
     await setDoc(doc(fb.db, "friendships", uids.join("_")), {
       uids,
@@ -376,17 +410,54 @@ async function promptRedeem(prefill) {
     await setDoc(doc(fb.db, "invites", inviteId), { acceptedBy: me.uid }, { merge: true });
     await renderFriends();
   } catch (error) {
-    alert(`Einlösen fehlgeschlagen: ${error.code || error.message}`);
+    await say("Einlösen fehlgeschlagen", error.code || error.message);
   }
 }
 
-/** Wer über einen Einladungslink hereinkommt, soll nichts abtippen müssen. */
+/**
+ * Wer über einen Einladungslink hereinkommt, soll nichts abtippen müssen.
+ *
+ * `code` ist der Weg für alle, die nur einen Code haben und nicht wissen
+ * können, wofür er ist – Gruppen-IDs und Freundschaftscodes sehen gleich aus.
+ * Die Seite probiert es einfach aus. `join` und `invite` bleiben für Links, die
+ * es schon wissen.
+ */
 async function handleDeepLinks() {
+  const code = parseId(params.get("code"));
   const join = parseId(params.get("join"));
   const invite = parseId(params.get("invite"));
+  if (code) await resolveCode(code);
   if (join) await promptJoin(join);
   if (invite) await promptRedeem(invite);
-  if (join || invite) history.replaceState(null, "", location.pathname);
+  if (code || join || invite) history.replaceState(null, "", location.pathname);
+}
+
+/**
+ * Findet heraus, wofür ein Code steht, und macht dann das Richtige damit.
+ *
+ * Erst als Gruppe, dann als Einladung. Beide sind 22 Zeichen aus demselben
+ * Vorrat; es gibt keinen anderen Weg als nachzusehen.
+ */
+async function resolveCode(code) {
+  try {
+    const group = await getDoc(doc(fb.db, "groups", code));
+    if (group.exists()) {
+      await promptJoin(code);
+      return;
+    }
+    const invite = await getDoc(doc(fb.db, "invites", code));
+    if (invite.exists()) {
+      await promptRedeem(code);
+      return;
+    }
+    await say(
+      "Nichts gefunden",
+      "Zu diesem Code gibt es weder eine Gruppe noch eine Einladung. " +
+      "Vielleicht ein Tippfehler, oder die Einladung wurde zurückgezogen.",
+    );
+  } catch (error) {
+    await say("Das ging schief", `Der Code ließ sich nicht prüfen: ${error.code || error.message}`);
+  }
 }
 
 /**
