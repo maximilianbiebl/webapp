@@ -7,22 +7,23 @@
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
-<header class="site">
-  <div class="row">
-    <div class="brand grow"><span class="dot"></span> Liegestütze</div>
-    <button class="chip hidden" id="signOut">Abmelden</button>
-  </div>
-</header>
-<main>
-  <div class="card stack hidden" id="unconfigured">
-    <h2>Noch nicht eingerichtet</h2>
-    <p class="muted">
-      In <code>web/firebase-config.js</code> fehlen die Zugangsdaten der
-      Web-App. Sie stehen in der Firebase-Konsole unter Projekteinstellungen →
-      Meine Apps → Web-App hinzufügen.
-    </p>
-  </div>
 
+<!-- Kurz sichtbar, bis der erste Anmeldezustand feststeht - sonst blitzt hier
+     immer kurz "Anmelden" auf, auch wenn man laengst angemeldet ist. -->
+<div class="card stack" id="authLoading">
+  <p class="muted">Wird geprüft …</p>
+</div>
+
+<div class="card stack hidden" id="unconfigured">
+  <h2>Noch nicht eingerichtet</h2>
+  <p class="muted">
+    In <code>web/firebase-config.js</code> fehlen die Zugangsdaten der Web-App.
+    Sie stehen in der Firebase-Konsole unter Projekteinstellungen → Meine Apps
+    → Web-App hinzufügen.
+  </p>
+</div>
+
+<main class="hidden" id="signInScreen" style="max-width:480px;margin:10vh auto;padding:16px">
   <div class="card stack" id="signIn">
     <h2>Anmelden</h2>
     <p class="muted">
@@ -33,68 +34,84 @@
     <button class="wide" id="google">Mit Google anmelden</button>
     <p class="muted error hidden" id="signInError"></p>
   </div>
-
-  <div id="app" class="hidden">
-    <div class="card stack">
-      <div class="row">
-        <div class="grow">
-          <h2 id="whoami">…</h2>
-          <p class="muted" id="whoamiSub"></p>
-        </div>
-      </div>
-      <div class="row">
-        <input type="text" id="name" class="grow" placeholder="Anzeigename" autocomplete="off">
-        <button class="ghost" id="saveName">Speichern</button>
-      </div>
-    </div>
-
-    <div class="card stack" id="trainingCard">
-      <div class="row">
-        <div class="grow">
-          <p class="muted" style="margin:0">Dein Level</p>
-          <h2 id="levelTitle" style="margin:0">…</h2>
-        </div>
-        <button class="chip" id="levelDown">−</button>
-        <button class="chip" id="levelUp">+</button>
-      </div>
-      <div class="setpills" id="setPills"></div>
-      <p class="muted" id="levelSummary"></p>
-      <p class="muted hint hidden" id="levelHint"></p>
-      <button class="wide" id="startWorkout">Training starten</button>
-      <button class="ghost wide" id="allLevels">Alle Level ansehen</button>
-    </div>
-
-    <div class="card stack" id="statsCard">
-      <h2>Deine Zahlen</h2>
-      <div class="tiles" id="tiles"></div>
-      <p class="muted" id="testLine"></p>
-      <p class="muted" id="goalLine"></p>
-      <div class="bar"><div id="goalBar" style="width:0%"></div></div>
-      <div id="history"></div>
-    </div>
-
-    <div class="card stack">
-      <div class="row">
-        <h2 class="grow">Gruppen</h2>
-        <button class="chip" id="newGroup">Neue Gruppe</button>
-        <button class="chip" id="joinGroup">Beitreten</button>
-      </div>
-      <div id="groups"><p class="muted">Wird geladen …</p></div>
-    </div>
-
-    <div class="card stack">
-      <div class="row">
-        <h2 class="grow">Freunde</h2>
-        <button class="chip" id="redeem">Einladung einlösen</button>
-      </div>
-      <div id="friends"><p class="muted">Wird geladen …</p></div>
-    </div>
-
-    <div id="detail"></div>
-  </div>
-
   <p class="muted"><a href="../">Zur Startseite</a></p>
 </main>
+
+<div id="shell" class="hidden">
+  <header class="topbar">
+    <button class="iconbtn hidden" id="backBtn" aria-label="Zurück">←</button>
+    <h1 id="topTitle">Training</h1>
+    <button class="iconbtn" id="accountBtn" aria-label="Konto">Konto</button>
+  </header>
+
+  <main class="tabmain">
+    <section class="tabpanel" id="tab-training">
+      <div class="card stack" id="trainingCard">
+        <div class="row">
+          <div class="grow">
+            <p class="muted" style="margin:0">Dein Level</p>
+            <h2 id="levelTitle" style="margin:0">…</h2>
+          </div>
+          <button class="chip" id="levelDown">−</button>
+          <button class="chip" id="levelUp">+</button>
+        </div>
+        <div class="setpills" id="setPills"></div>
+        <p class="muted" id="levelSummary"></p>
+        <p class="muted hint hidden" id="levelHint"></p>
+        <button class="wide" id="startWorkout">Training starten</button>
+        <button class="ghost wide" id="allLevels">Alle Level ansehen</button>
+      </div>
+
+      <div class="card stack">
+        <h2>Deine Zahlen</h2>
+        <div class="tiles" id="quickTiles"></div>
+        <p class="muted" id="testLine"></p>
+        <p class="muted" id="goalLine"></p>
+        <div class="bar"><div id="goalBar" style="width:0%"></div></div>
+        <button class="ghost wide" id="toHistory">Ganzen Verlauf ansehen</button>
+      </div>
+    </section>
+
+    <section class="tabpanel hidden" id="tab-friends">
+      <div class="card stack">
+        <div class="row">
+          <h2 class="grow">Freunde</h2>
+          <button class="chip" id="redeem">Einladung einlösen</button>
+        </div>
+        <div id="friends"><p class="muted">Wird geladen …</p></div>
+        <button class="wide" id="inviteFriend">Freund einladen</button>
+      </div>
+    </section>
+
+    <section class="tabpanel hidden" id="tab-groups">
+      <div class="card stack">
+        <div class="row">
+          <h2 class="grow">Gruppen</h2>
+          <button class="chip" id="joinGroup">Beitreten</button>
+        </div>
+        <div id="groups"><p class="muted">Wird geladen …</p></div>
+        <button class="wide" id="newGroup">Neue Gruppe</button>
+      </div>
+    </section>
+
+    <section class="tabpanel hidden" id="tab-history">
+      <div class="card stack">
+        <h2>Verlauf</h2>
+        <div class="tiles" id="fullTiles"></div>
+        <div id="fullHistory"></div>
+      </div>
+    </section>
+
+    <section class="tabpanel hidden" id="tab-detail"></section>
+  </main>
+
+  <nav class="bottomnav">
+    <button class="navitem" data-tab="training" aria-pressed="true">Training</button>
+    <button class="navitem" data-tab="friends">Freunde</button>
+    <button class="navitem" data-tab="groups">Gruppen</button>
+    <button class="navitem" data-tab="history">Verlauf</button>
+  </nav>
+</div>
 
 <!-- Der Trainingsbildschirm liegt ueber allem, damit nichts ablenkt. -->
 <div id="workout">

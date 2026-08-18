@@ -240,3 +240,65 @@ dialog .actions button { padding: 10px 18px; }
 .tiles > div { flex: 1; }
 .tiles .n { font-size: 1.5rem; font-weight: 700; }
 .tiles .l { font-size: 0.72rem; color: var(--muted); }
+
+/*
+ * Die App-Huelle: obere Leiste, Reiter unten, dazwischen genau ein sichtbares
+ * Panel. Dieselbe Struktur wie in der Android-App - Training, Freunde,
+ * Gruppen, Verlauf -, damit sich beide Fassungen gleich anfuehlen.
+ */
+#shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.topbar h1 { flex: 1; font-size: 1.1rem; margin: 0; }
+.iconbtn {
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.iconbtn:hover { background: rgba(128, 128, 128, 0.15); }
+
+.tabmain { flex: 1; max-width: 680px; width: 100%; margin: 0 auto; padding: 16px; padding-bottom: 32px; }
+.tabpanel.hidden { display: none; }
+
+.bottomnav {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+}
+.navitem {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 8px 4px;
+  cursor: pointer;
+  border-radius: 12px;
+}
+.navitem[aria-pressed="true"] { color: var(--orange); font-weight: 700; background: var(--card); }
+
+#authLoading { max-width: 420px; margin: 40vh auto 0; text-align: center; }

@@ -1,17 +1,18 @@
 /*
  * Die Webversion.
  *
- * Bewusst lesend, mit zwei Ausnahmen: beitreten und eine Einladung einlösen.
- * Trainieren gehört auf das Gerät, das man beim Trainieren dabeihat; was hier
- * wirklich hilft, ist der große Bildschirm für Bestenliste und Vergleich.
+ * Vier Reiter wie in der App: Training, Freunde, Gruppen, Verlauf. Innerhalb
+ * von Freunde und Gruppen kann man in eine Gruppe oder einen Vergleich
+ * hineingehen - dieselbe Vorstellung wie die zwei zusaetzlichen Bildschirme
+ * (GroupDetailScreen, FriendDetailScreen), die die App auf den Stapel legt.
  *
- * Kein Bauschritt, keine Abhängigkeiten außer dem Firebase-SDK direkt von
- * Google. Die Datei lässt sich lesen wie sie ausgeliefert wird.
+ * Kein Bauschritt, keine Abhaengigkeiten ausser dem Firebase-SDK direkt von
+ * Google. Die Datei laesst sich lesen wie sie ausgeliefert wird.
  */
 import {
   firebase, isConfigured, onAuthStateChanged, signInWithPopup, GoogleAuthProvider,
   signOut, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where,
-  parseId, buildLeaderboard, buildComparison, ID_LENGTH, today,
+  parseId, buildLeaderboard, buildComparison, ID_LENGTH, today, waitForAuth,
 } from "../shared.js";
 import { ask, say, askForText } from "./dialogs.js";
 import { LEVEL_COUNT, levelReps, levelTotal, goalProgress, suggestLevel } from "../levels.js";
@@ -33,6 +34,24 @@ let sort = "reps";
 let profile = { level: 1, goalReps: 100, updatedAt: 0 };
 let sessions = [];
 
+/**
+ * Wo man gerade ist. `detail` legt sich ueber einen Reiter, so wie die App
+ * GroupDetailScreen und FriendDetailScreen ueber den Reiter Gruppen bzw.
+ * Freunde legt - der Reiter darunter bleibt derselbe, nur sichtbar ist er
+ * nicht.
+ */
+const state = {
+  tab: "training",
+  detail: null, // null | { type: "group", id } | { type: "friend", pairId }
+};
+
+const TAB_TITLES = {
+  training: "Training",
+  friends: "Freunde",
+  groups: "Gruppen",
+  history: "Verlauf",
+};
+
 if (params.get("code") || params.get("join") || params.get("invite")) {
   // Sonst steht da nur "Anmelden", und warum, weiss niemand.
   const note = document.createElement("p");
@@ -43,16 +62,21 @@ if (params.get("code") || params.get("join") || params.get("invite")) {
 }
 
 if (!isConfigured) {
+  show($("authLoading"), false);
   show($("unconfigured"), true);
-  show($("signIn"), false);
 } else {
   fb = firebase();
-  onAuthStateChanged(fb.auth, (user) => {
-    me = user;
-    show($("signIn"), !user);
-    show($("app"), Boolean(user));
-    show($("signOut"), Boolean(user));
-    if (user) start();
+  // Erst pruefen, ob die Anmeldung ueberhaupt einen Reload uebersteht, dann
+  // auf den ersten echten Zustand warten - sonst blitzt "Anmelden" auf, bevor
+  // die gespeicherte Sitzung ueberhaupt eine Chance hatte zu antworten.
+  waitForAuth().then(() => {
+    onAuthStateChanged(fb.auth, (user) => {
+      me = user;
+      show($("authLoading"), false);
+      show($("signInScreen"), !user);
+      show($("shell"), Boolean(user));
+      if (user) start();
+    });
   });
 }
 
@@ -66,7 +90,58 @@ $("google").addEventListener("click", async () => {
   }
 });
 
-$("signOut").addEventListener("click", () => signOut(fb.auth));
+/* --------------------------------------------------------------- Navigation */
+
+function setTab(tab) {
+  state.tab = tab;
+  state.detail = null;
+  render();
+}
+
+function openDetail(detail) {
+  state.detail = detail;
+  render();
+}
+
+function closeDetail() {
+  state.detail = null;
+  render();
+}
+
+document.querySelectorAll(".navitem").forEach((button) =>
+  button.addEventListener("click", () => setTab(button.dataset.tab)));
+
+$("backBtn").addEventListener("click", closeDetail);
+$("toHistory").addEventListener("click", () => setTab("history"));
+
+/**
+ * Zeigt genau ein Panel, setzt Titel und Zurueck-Pfeil, und laedt bei Bedarf
+ * das Detail nach. Reiter bleiben unter der Leiste verborgen, waehrend ein
+ * Detail offen ist - dieselbe Logik wie die App, die die Reiterleiste beim
+ * Aufruf von GroupDetailScreen/FriendDetailScreen gar nicht erst zeichnet.
+ */
+function render() {
+  document.querySelectorAll(".navitem").forEach((button) =>
+    button.setAttribute("aria-pressed", String(button.dataset.tab === state.tab)));
+
+  const showingDetail = state.detail !== null;
+  show($("backBtn"), showingDetail);
+  $("accountBtn").classList.toggle("hidden", showingDetail);
+  document.querySelector(".bottomnav").classList.toggle("hidden", showingDetail);
+
+  ["training", "friends", "groups", "history"].forEach((tab) => {
+    show($(`tab-${tab}`), !showingDetail && state.tab === tab);
+  });
+  show($("tab-detail"), showingDetail);
+
+  if (!showingDetail) {
+    $("topTitle").textContent = TAB_TITLES[state.tab];
+    return;
+  }
+  $("topTitle").textContent = "…";
+  if (state.detail.type === "group") drawGroupDetail(state.detail.id);
+  else drawFriendDetail(state.detail.pairId);
+}
 
 /* ---------------------------------------------------------------- Daten */
 
@@ -112,10 +187,10 @@ async function readOwnTraining() {
 /**
  * Schreibt das Programm zurueck.
  *
- * Nur die Felder, die diese Seite ueberhaupt aendern kann. Die erste Fassung
- * schrieb auch `lastTestResult: 0` mit - und haette damit das Ergebnis des
- * Maximaltests ueberall geloescht, sobald hier jemand das Level wechselt. Was
- * eine Seite nicht bearbeitet, darf sie auch nicht schreiben.
+ * Nur die Felder, die diese Seite ueberhaupt aendern kann. Was eine Seite
+ * nicht bearbeitet, darf sie auch nicht schreiben - sonst hätte ein
+ * Levelwechsel hier zum Beispiel das Ergebnis eines Maximaltests aus der App
+ * mit geloescht.
  *
  * `updatedAt` entscheidet, welches Geraet gewonnen hat, wenn zwei dasselbe
  * geaendert haben - die App merkt sich das genauso.
@@ -164,6 +239,22 @@ async function storeSession(workout) {
       setDoc(doc(fb.db, "friendships", f.pairId, "entries", `${me.uid}_${workout.id}`), entry)));
 }
 
+/**
+ * Loescht eine Einheit ueberall wieder - lokal reicht nicht, sonst kaeme sie
+ * beim naechsten Abgleich mit der App zurueck und die Bestenliste behielte
+ * einen Eintrag, den man selbst weggeworfen hat.
+ */
+async function deleteSession(id) {
+  await deleteDoc(doc(sessionsRef(), id));
+  sessions = sessions.filter((s) => s.id !== id);
+  const [groups, friendships] = await Promise.all([readGroups(), readFriendships()]);
+  await Promise.all([
+    ...groups.map((g) => deleteDoc(doc(fb.db, "groups", g.id, "entries", `${me.uid}_${id}`))),
+    ...friendships.map((f) =>
+      deleteDoc(doc(fb.db, "friendships", f.pairId, "entries", `${me.uid}_${id}`))),
+  ].map((p) => p.catch(() => {}))); // ein fehlender Eintrag ist kein Fehler
+}
+
 async function readGroups() {
   const snapshot = await getDocs(membershipsRef());
   return snapshot.docs
@@ -208,19 +299,18 @@ async function readFriendships() {
 
 async function start() {
   displayName = await readMyProfile();
-  $("whoami").textContent = displayName || "Ohne Namen";
-  $("whoamiSub").textContent = me.email || "Anonymes Konto";
-  $("name").value = displayName;
 
   await readOwnTraining().catch(() => {});
   renderTraining();
-  renderStats();
+  renderQuickStats();
+  renderFullHistory();
 
-  await Promise.all([renderGroups(), renderFriends()]);
+  render();
+  await Promise.all([renderGroupsList(), renderFriendsList()]);
   await handleDeepLinks();
 }
 
-async function renderGroups() {
+async function renderGroupsList() {
   const box = $("groups");
   try {
     const groups = await readGroups();
@@ -237,13 +327,13 @@ async function renderGroups() {
         <span class="muted">ansehen →</span>
       </div>`).join("");
     box.querySelectorAll("[data-group]").forEach((row) =>
-      row.addEventListener("click", () => openGroup(row.dataset.group)));
+      row.addEventListener("click", () => openDetail({ type: "group", id: row.dataset.group })));
   } catch (error) {
     box.innerHTML = `<p class="muted error">Gruppen nicht lesbar: ${escape(error.code || error.message)}</p>`;
   }
 }
 
-async function renderFriends() {
+async function renderFriendsList() {
   const box = $("friends");
   try {
     const all = await readFriendships();
@@ -268,10 +358,8 @@ async function renderFriends() {
     }
     box.innerHTML = parts.join("");
     box.querySelectorAll("[data-friend]").forEach((row) =>
-      row.addEventListener("click", () => {
-        const friendship = accepted.find((f) => f.pairId === row.dataset.friend);
-        openFriend(friendship);
-      }));
+      row.addEventListener("click", () =>
+        openDetail({ type: "friend", pairId: row.dataset.friend })));
   } catch (error) {
     box.innerHTML = `<p class="muted error">Freunde nicht lesbar: ${escape(error.code || error.message)}</p>`;
   }
@@ -313,39 +401,72 @@ async function showSummary(workout) {
   );
 }
 
-function renderStats() {
+/** Die vier Zahlen auf dem Trainings-Reiter, wie in HomeScreen der App. */
+function renderQuickStats() {
   const s = statistics(sessions);
   const tiles = [
     [s.totalReps, "Wiederholungen"],
     [s.workoutCount, "Einheiten"],
     [s.currentStreakDays, "Tage in Folge"],
-    [s.bestSet, "Bester Satz"],
   ];
-  $("tiles").innerHTML = tiles
+  $("quickTiles").innerHTML = tiles
     .map(([n, label]) => `<div><div class="n">${n}</div><div class="l">${label}</div></div>`)
     .join("");
 
   const progress = goalProgress(s.bestSet, profile.goalReps);
   $("goalLine").textContent =
     `Ziel: ${s.bestSet} von ${profile.goalReps} am Stück (${Math.round(progress * 100)} %) — ändern`;
-  $("goalLine").style.cursor = "pointer";
   $("goalBar").style.width = `${progress * 100}%`;
 
   $("testLine").textContent = profile.lastTestResult
     ? `Letzter Maximaltest: ${profile.lastTestResult} am Stück`
     : "Noch kein Maximaltest gemacht — der geht in der App.";
+}
 
-  const recent = [...sessions].sort((a, b) => b.timestampMillis - a.timestampMillis).slice(0, 10);
-  $("history").innerHTML = recent.length
-    ? recent.map((entry) => `
+/** Der volle Verlauf mit allen Zahlen, wie HistoryScreen in der App. */
+function renderFullHistory() {
+  const s = statistics(sessions);
+  const tiles = [
+    [s.totalReps, "Wiederholungen"],
+    [s.bestSet, "Bester Satz"],
+    [s.currentStreakDays, "Tage in Folge"],
+    [s.workoutCount, "Einheiten"],
+    [s.bestSession, "Beste Einheit"],
+    [s.repsLast7Days, "Letzte 7 Tage"],
+  ];
+  $("fullTiles").innerHTML = tiles
+    .map(([n, label]) => `<div><div class="n">${n}</div><div class="l">${label}</div></div>`)
+    .join("");
+
+  const sorted = [...sessions].sort((a, b) => b.timestampMillis - a.timestampMillis);
+  $("fullHistory").innerHTML = sorted.length
+    ? sorted.map((entry) => `
         <div class="listrow" style="cursor:default">
           <div class="grow">
-            <div class="name">${totalReps(entry)} Wiederholungen</div>
+            <div class="name">${totalReps(entry)} Wiederholungen · Level ${entry.level}</div>
             <div class="muted">${escape(entry.actualReps.join(" · "))}</div>
           </div>
           <div class="muted">${new Date(entry.timestampMillis).toLocaleDateString("de-DE")}</div>
+          <button class="chip" data-delete="${escape(entry.id)}">Löschen</button>
         </div>`).join("")
     : `<p class="muted">Noch kein Training aufgezeichnet.</p>`;
+
+  $("fullHistory").querySelectorAll("[data-delete]").forEach((button) =>
+    button.addEventListener("click", async () => {
+      const yes = await ask(
+        "Einheit löschen",
+        "Sie verschwindet auch aus jeder Gruppe und jedem Vergleich, in dem sie stand.",
+        "Löschen",
+      );
+      if (!yes) return;
+      try {
+        await deleteSession(button.dataset.delete);
+        renderFullHistory();
+        renderQuickStats();
+      } catch (error) {
+        await say("Nicht gelöscht", error.code || error.message);
+      }
+    }));
 }
 
 // Das Ziel laesst sich hier genauso setzen wie in der App - sonst waere es das
@@ -355,13 +476,14 @@ $("goalLine").addEventListener("click", async () => {
   const wanted = Number(entered);
   if (!Number.isFinite(wanted)) return;
   profile.goalReps = Math.min(Math.max(Math.round(wanted), 20), 300);
-  renderStats();
+  renderQuickStats();
   try {
     await writeProfile();
   } catch (error) {
     await say("Nicht gespeichert", error.code || error.message);
   }
 });
+$("goalLine").style.cursor = "pointer";
 
 /**
  * Alle 40 Level zum Nachsehen.
@@ -428,7 +550,8 @@ $("startWorkout").addEventListener("click", async () => {
   const workout = await runWorkout(profile.level);
   if (!workout) return;
   sessions = [...sessions, workout];
-  renderStats();
+  renderQuickStats();
+  renderFullHistory();
   await showSummary(workout);
   try {
     await storeSession(workout);
@@ -450,25 +573,24 @@ function chips(entries, current, attribute) {
   ).join("");
 }
 
-async function openGroup(groupId) {
-  const detail = $("detail");
-  detail.innerHTML = `<div class="card"><p class="muted">Wird geladen …</p></div>`;
-  detail.scrollIntoView({ behavior: "smooth", block: "start" });
+async function drawGroupDetail(groupId) {
+  const panel = $("tab-detail");
+  panel.innerHTML = `<div class="card"><p class="muted">Wird geladen …</p></div>`;
   let group;
   try {
     group = await readGroup(groupId);
   } catch (error) {
-    detail.innerHTML = `<div class="card"><p class="muted error">Kein Zugriff: ${escape(error.code || error.message)}</p></div>`;
+    panel.innerHTML = `<div class="card"><p class="muted error">Kein Zugriff: ${escape(error.code || error.message)}</p></div>`;
     return;
   }
+  $("topTitle").textContent = group.name || "Gruppe ohne Namen";
 
   const draw = () => {
     const rows = buildLeaderboard(group.members, group.entries, range, sort);
     const total = rows.reduce((sum, r) => sum + r.totalReps, 0);
     const average = rows.length ? Math.floor(total / rows.length) : 0;
-    detail.innerHTML = `
+    panel.innerHTML = `
       <div class="card stack">
-        <h2>${escape(group.name || "Gruppe ohne Namen")}</h2>
         <p class="muted">Zeitraum</p>
         <div class="chips">${chips(RANGES, range, "range")}</div>
         <p class="muted">Sortierung</p>
@@ -488,26 +610,32 @@ async function openGroup(groupId) {
         <p class="muted">Gruppen-ID: <span class="code">${escape(group.id)}</span></p>
         <p class="muted">Verwalten, umbenennen und verlassen geht in der App.</p>
       </div>`;
-    detail.querySelectorAll("[data-range]").forEach((chip) =>
+    panel.querySelectorAll("[data-range]").forEach((chip) =>
       chip.addEventListener("click", () => { range = Number(chip.dataset.range); draw(); }));
-    detail.querySelectorAll("[data-sort]").forEach((chip) =>
+    panel.querySelectorAll("[data-sort]").forEach((chip) =>
       chip.addEventListener("click", () => { sort = chip.dataset.sort; draw(); }));
   };
   draw();
 }
 
-async function openFriend(friendship) {
-  const detail = $("detail");
-  detail.innerHTML = `<div class="card"><p class="muted">Wird geladen …</p></div>`;
-  detail.scrollIntoView({ behavior: "smooth", block: "start" });
+async function drawFriendDetail(pairId) {
+  const panel = $("tab-detail");
+  panel.innerHTML = `<div class="card"><p class="muted">Wird geladen …</p></div>`;
+  const friendships = await readFriendships();
+  const friendship = friendships.find((f) => f.pairId === pairId);
+  if (!friendship) {
+    panel.innerHTML = `<div class="card"><p class="muted">Diese Freundschaft besteht nicht mehr.</p></div>`;
+    $("topTitle").textContent = "Nicht mehr verbunden";
+    return;
+  }
+  $("topTitle").textContent = friendship.otherName || "Ohne Namen";
+
   let entries;
   try {
-    const snapshot = await getDocs(
-      collection(fb.db, "friendships", friendship.pairId, "entries"),
-    );
+    const snapshot = await getDocs(collection(fb.db, "friendships", pairId, "entries"));
     entries = snapshot.docs.map((d) => d.data());
   } catch (error) {
-    detail.innerHTML = `<div class="card"><p class="muted error">Kein Zugriff: ${escape(error.code || error.message)}</p></div>`;
+    panel.innerHTML = `<div class="card"><p class="muted error">Kein Zugriff: ${escape(error.code || error.message)}</p></div>`;
     return;
   }
 
@@ -520,9 +648,8 @@ async function openFriend(friendship) {
       <div class="value ${a > b ? "ahead" : ""}">${a}</div>
       <div class="label">${label}</div>
       <div class="value ${b > a ? "ahead" : ""}">${b}</div>`;
-    detail.innerHTML = `
+    panel.innerHTML = `
       <div class="card stack">
-        <h2>Direktvergleich</h2>
         <p class="muted">Zeitraum</p>
         <div class="chips">${chips(RANGES, range, "range")}</div>
         <div class="compare">
@@ -538,30 +665,76 @@ async function openFriend(friendship) {
         </div>
         ${friendship.pausedBy.includes(friendship.otherUid)
           ? '<p class="muted">Diese Person teilt ihre Zahlen mit dir gerade nicht.</p>' : ""}
+        <p class="muted">Entfernen, blockieren und Teilen pausieren geht in der App.</p>
       </div>`;
-    detail.querySelectorAll("[data-range]").forEach((chip) =>
+    panel.querySelectorAll("[data-range]").forEach((chip) =>
       chip.addEventListener("click", () => { range = Number(chip.dataset.range); draw(); }));
   };
   draw();
 }
 
-/* ------------------------------------------------------------- Schreiben */
+/* -------------------------------------------------------------- Konto */
 
-$("saveName").addEventListener("click", async () => {
-  const name = $("name").value.trim().slice(0, 40);
-  if (!name) return;
+/**
+ * Das Konto: Anzeigename und Abmelden.
+ *
+ * Kein Loeschen hier - das ist ein mehrschrittiger Vorgang (Profil weg, dann
+ * das Konto selbst) und bleibt bewusst der App vorbehalten, wo er schon
+ * getestet ist. Doppelt gebaut waere er nur doppelt so leicht auseinander zu
+ * laufen.
+ */
+$("accountBtn").addEventListener("click", () => {
+  const dialog = document.createElement("dialog");
+  dialog.innerHTML = `
+    <h2>Konto</h2>
+    <p class="muted">${escape(me.email || "Anonymes Konto")}</p>
+    <input type="text" id="nameField" placeholder="Anzeigename" autocomplete="off" value="${escape(displayName)}">
+    <div class="actions">
+      <button class="ghost" id="signOutBtn">Abmelden</button>
+      <button id="saveNameBtn">Speichern</button>
+    </div>`;
+  document.body.append(dialog);
+  dialog.addEventListener("close", () => dialog.remove());
+
+  dialog.querySelector("#saveNameBtn").addEventListener("click", async () => {
+    const name = dialog.querySelector("#nameField").value.trim().slice(0, 40);
+    dialog.close();
+    if (!name || name === displayName) return;
+    await saveDisplayName(name);
+  });
+  dialog.querySelector("#signOutBtn").addEventListener("click", async () => {
+    dialog.close();
+    const yes = await ask(
+      "Abmelden",
+      "Du meldest dich von diesem Browser ab. Dein Training auf deinem Telefon bleibt " +
+      "erhalten. Mit demselben Google-Konto kommst du jederzeit zurück.",
+      "Abmelden",
+    );
+    if (yes) await signOut(fb.auth);
+  });
+
+  dialog.showModal();
+});
+
+/**
+ * Speichert den Anzeigenamen und zieht ihn nach.
+ *
+ * Der Name liegt in jeder Gruppe und jeder Freundschaft noch einmal, damit
+ * Mitgliederlisten ohne Nachladen auskommen - der Preis dafuer ist, ihn dort
+ * ueberall zu aktualisieren.
+ */
+async function saveDisplayName(name) {
   await setDoc(profileRef(), { displayName: name, updatedAt: Date.now() }, { merge: true });
   displayName = name;
-  $("whoami").textContent = name;
-  // Der Name liegt in jeder Gruppe noch einmal, damit Mitgliederlisten ohne
-  // Nachladen auskommen. Also muss er dort mitgezogen werden.
   const groups = await readGroups();
   await Promise.all(groups.map((g) =>
     setDoc(doc(fb.db, "groups", g.id, "members", me.uid), { displayName: name }, { merge: true })));
   const friendships = await readFriendships();
   await Promise.all(friendships.map((f) =>
     setDoc(doc(fb.db, "friendships", f.pairId), { names: { [me.uid]: name } }, { merge: true })));
-});
+}
+
+/* -------------------------------------------------------- Gruppen und Freunde */
 
 $("newGroup").addEventListener("click", async () => {
   const entered = await askForText("Neue Gruppe", "Name der Gruppe", "Anlegen");
@@ -572,8 +745,9 @@ $("newGroup").addEventListener("click", async () => {
   try {
     await setDoc(doc(fb.db, "groups", id), { name, ownerUid: me.uid, createdAt: now });
     await joinExisting(id, name, now);
-    await renderGroups();
-    openGroup(id);
+    await renderGroupsList();
+    setTab("groups");
+    openDetail({ type: "group", id });
   } catch (error) {
     await say("Anlegen fehlgeschlagen", error.code || error.message);
   }
@@ -581,6 +755,33 @@ $("newGroup").addEventListener("click", async () => {
 
 $("joinGroup").addEventListener("click", () => promptJoin());
 $("redeem").addEventListener("click", () => promptRedeem());
+$("inviteFriend").addEventListener("click", () => createFriendInvite());
+
+/**
+ * Erstellt eine Einladung und bietet sie zum Teilen an - dasselbe Ziel wie der
+ * Knopf "Freund einladen" in der App, nur dass der Browser kein Teilen-Menue
+ * hat: Der Link landet in der Zwischenablage.
+ */
+async function createFriendInvite() {
+  const now = Date.now();
+  const inviteId = randomId();
+  try {
+    await setDoc(doc(fb.db, "invites", inviteId), {
+      fromUid: me.uid,
+      fromDisplayName: displayName || "Anonym",
+      createdAt: now,
+      expiresAt: now + 7 * 86400000,
+    });
+    const link = `${location.origin}${location.pathname.replace(/app\/?$/, "f/")}?id=${inviteId}`;
+    await navigator.clipboard.writeText(link).catch(() => {});
+    await say(
+      "Einladung erstellt",
+      `Der Link ist in der Zwischenablage und sieben Tage gültig: ${link}`,
+    );
+  } catch (error) {
+    await say("Anlegen fehlgeschlagen", error.code || error.message);
+  }
+}
 
 async function promptJoin(prefill) {
   const input = prefill || await askForText("Gruppe beitreten", "Gruppen-ID oder Link", "Weiter");
@@ -598,8 +799,8 @@ async function promptJoin(prefill) {
     const name = snapshot.data().name || "Gruppe ohne Namen";
     const memberDoc = await getDoc(doc(fb.db, "groups", id, "members", me.uid));
     if (memberDoc.exists()) {
-      await say(name, "Da bist du schon dabei.");
-      openGroup(id);
+      setTab("groups");
+      openDetail({ type: "group", id });
       return;
     }
     const yes = await ask(
@@ -610,8 +811,9 @@ async function promptJoin(prefill) {
     if (!yes) return;
     await joinExisting(id, name, Date.now());
     await backfill(id);
-    await renderGroups();
-    openGroup(id);
+    await renderGroupsList();
+    setTab("groups");
+    openDetail({ type: "group", id });
   } catch (error) {
     await say("Beitreten fehlgeschlagen", error.code || error.message);
   }
@@ -678,7 +880,8 @@ async function promptRedeem(prefill) {
     );
     if (!yes) return;
     const uids = [me.uid, invite.fromUid].sort();
-    await setDoc(doc(fb.db, "friendships", uids.join("_")), {
+    const pairId = uids.join("_");
+    await setDoc(doc(fb.db, "friendships", pairId), {
       uids,
       status: "accepted",
       requestedBy: invite.fromUid,
@@ -688,7 +891,9 @@ async function promptRedeem(prefill) {
       names: { [me.uid]: displayName || "Anonym", [invite.fromUid]: from },
     });
     await setDoc(doc(fb.db, "invites", inviteId), { acceptedBy: me.uid }, { merge: true });
-    await renderFriends();
+    await renderFriendsList();
+    setTab("friends");
+    openDetail({ type: "friend", pairId });
   } catch (error) {
     await say("Einlösen fehlgeschlagen", error.code || error.message);
   }
