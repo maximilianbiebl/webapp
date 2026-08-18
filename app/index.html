@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Liegestütze – Web</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -124,9 +125,14 @@
     <div class="count" id="wCount">0</div>
     <div class="of" id="wOf"></div>
   </div>
+  <p class="setline" id="wHint"></p>
   <p class="setline" id="wNote"></p>
+  <div class="row wadjust hidden" id="wAdjust">
+    <button class="chip" id="wMinus">−1</button>
+    <button class="chip" id="wPlus">+1</button>
+  </div>
   <div class="controls">
-    <button class="ghost" id="wAbort">Verwerfen</button>
+    <button class="ghost" id="wAbort">Abbrechen</button>
     <button class="ghost hidden" id="wStop">Hier beenden</button>
     <button id="wNext">Weiter</button>
   </div>

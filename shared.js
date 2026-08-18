@@ -12,6 +12,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where,
+  onSnapshot,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { firebaseConfig, isConfigured } from "./firebase-config.js";
 
@@ -59,5 +60,5 @@ export function waitForAuth() {
 
 export {
   isConfigured, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut,
-  doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where,
+  doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, onSnapshot,
 };

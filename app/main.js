@@ -12,7 +12,7 @@
 import {
   firebase, isConfigured, onAuthStateChanged, signInWithPopup, GoogleAuthProvider,
   signOut, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where,
-  parseId, buildLeaderboard, buildComparison, ID_LENGTH, today, waitForAuth,
+  onSnapshot, parseId, buildLeaderboard, buildComparison, ID_LENGTH, today, waitForAuth,
 } from "../shared.js";
 import { ask, say, askForText } from "./dialogs.js";
 import { LEVEL_COUNT, levelReps, levelTotal, goalProgress, suggestLevel } from "../levels.js";
@@ -304,65 +304,131 @@ async function start() {
   renderTraining();
   renderQuickStats();
   renderFullHistory();
-
   render();
-  await Promise.all([renderGroupsList(), renderFriendsList()]);
+
+  // Live statt einmalig gelesen: Ein Levelwechsel oder eine neue Einheit auf
+  // dem Handy soll hier ankommen, ohne dass man die Seite neu laedt - genau
+  // die Traegheit, an der der Abgleich vorher krankte.
+  watchOwnTraining();
+  watchGroups();
+  watchFriends();
+
   await handleDeepLinks();
 }
 
-async function renderGroupsList() {
-  const box = $("groups");
-  try {
-    const groups = await readGroups();
-    if (!groups.length) {
-      box.innerHTML = `<p class="muted">Noch in keiner Gruppe.</p>`;
-      return;
-    }
-    box.innerHTML = groups.map((g) => `
-      <div class="listrow" data-group="${escape(g.id)}">
-        <div class="grow">
-          <div class="name">${escape(g.name || "Gruppe ohne Namen")}</div>
-          ${g.sharing === false ? '<div class="muted">Teilen pausiert</div>' : ""}
-        </div>
-        <span class="muted">ansehen →</span>
-      </div>`).join("");
-    box.querySelectorAll("[data-group]").forEach((row) =>
-      row.addEventListener("click", () => openDetail({ type: "group", id: row.dataset.group })));
-  } catch (error) {
-    box.innerHTML = `<p class="muted error">Gruppen nicht lesbar: ${escape(error.code || error.message)}</p>`;
-  }
+/** Haelt Level, Ziel und Verlauf synchron mit dem, was gerade in der Cloud steht. */
+function watchOwnTraining() {
+  onSnapshot(privateProfileRef(), (snapshot) => {
+    profile = snapshot.exists()
+      ? {
+          level: snapshot.data().level || 1,
+          goalReps: snapshot.data().goalReps || 100,
+          levelStartedAt: snapshot.data().levelStartedAt || 0,
+          hasChosenLevel: snapshot.data().hasChosenLevel || false,
+          lastTestResult: snapshot.data().lastTestResult || 0,
+          updatedAt: snapshot.data().updatedAt || 0,
+        }
+      : {
+          level: 1, goalReps: 100, levelStartedAt: 0,
+          hasChosenLevel: false, lastTestResult: 0, updatedAt: 0,
+        };
+    renderTraining();
+    renderQuickStats();
+  }, () => {});
+
+  onSnapshot(sessionsRef(), (snapshot) => {
+    sessions = snapshot.docs.map((d) => ({
+      id: d.id,
+      timestampMillis: d.data().timestamp || 0,
+      level: d.data().level || 1,
+      plannedReps: d.data().plannedReps || [],
+      actualReps: d.data().actualReps || [],
+      durationSeconds: d.data().durationSeconds || 0,
+    }));
+    renderQuickStats();
+    renderFullHistory();
+  }, () => {});
 }
 
-async function renderFriendsList() {
-  const box = $("friends");
-  try {
-    const all = await readFriendships();
-    const accepted = all.filter((f) => f.status === "accepted");
-    const incoming = all.filter((f) => f.status === "pending" && f.requestedBy !== me.uid);
+function watchGroups() {
+  onSnapshot(membershipsRef(), (snapshot) => {
+    const groups = snapshot.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+    drawGroupsList(groups);
+  }, (error) => {
+    $("groups").innerHTML =
+      `<p class="muted error">Gruppen nicht lesbar: ${escape(error.code || error.message)}</p>`;
+  });
+}
 
-    const parts = [];
-    if (incoming.length) {
-      parts.push(`<p class="muted">Offene Anfragen an dich – annehmen geht in der App:</p>`);
-      parts.push(incoming.map((f) => `
-        <div class="listrow"><div class="grow">${escape(f.otherName || "Ohne Namen")}</div>
-        <span class="muted">wartet</span></div>`).join(""));
-    }
-    if (!accepted.length) {
-      parts.push(`<p class="muted">Noch keine Freunde.</p>`);
-    } else {
-      parts.push(accepted.map((f) => `
-        <div class="listrow" data-friend="${escape(f.pairId)}">
-          <div class="grow"><div class="name">${escape(f.otherName || "Ohne Namen")}</div></div>
-          <span class="muted">vergleichen →</span>
-        </div>`).join(""));
-    }
-    box.innerHTML = parts.join("");
-    box.querySelectorAll("[data-friend]").forEach((row) =>
-      row.addEventListener("click", () =>
-        openDetail({ type: "friend", pairId: row.dataset.friend })));
-  } catch (error) {
-    box.innerHTML = `<p class="muted error">Freunde nicht lesbar: ${escape(error.code || error.message)}</p>`;
+function watchFriends() {
+  const q = query(collection(fb.db, "friendships"), where("uids", "array-contains", me.uid));
+  onSnapshot(q, (snapshot) => {
+    const all = snapshot.docs.map((d) => {
+      const data = d.data();
+      const other = (data.uids || []).find((uid) => uid !== me.uid) || "";
+      return {
+        pairId: d.id,
+        otherUid: other,
+        otherName: (data.names || {})[other] || "",
+        status: data.status,
+        requestedBy: data.requestedBy,
+        pausedBy: data.pausedBy || [],
+      };
+    });
+    drawFriendsList(all);
+  }, (error) => {
+    $("friends").innerHTML =
+      `<p class="muted error">Freunde nicht lesbar: ${escape(error.code || error.message)}</p>`;
+  });
+}
+
+/** Zeichnet die Gruppenliste aus bereits gelesenen Daten - kein eigener Zugriff. */
+function drawGroupsList(groups) {
+  const box = $("groups");
+  if (!groups.length) {
+    box.innerHTML = `<p class="muted">Noch in keiner Gruppe.</p>`;
+    return;
   }
+  box.innerHTML = groups.map((g) => `
+    <div class="listrow" style="cursor:default">
+      <div class="grow">
+        <div class="name">${escape(g.name || "Gruppe ohne Namen")}</div>
+        ${g.sharing === false ? '<div class="muted">Teilen pausiert</div>' : ""}
+      </div>
+      <button class="chip" data-group="${escape(g.id)}">Ansehen</button>
+    </div>`).join("");
+  box.querySelectorAll("[data-group]").forEach((button) =>
+    button.addEventListener("click", () => openDetail({ type: "group", id: button.dataset.group })));
+}
+
+/** Zeichnet die Freundesliste aus bereits gelesenen Daten - kein eigener Zugriff. */
+function drawFriendsList(all) {
+  const box = $("friends");
+  const accepted = all.filter((f) => f.status === "accepted");
+  const incoming = all.filter((f) => f.status === "pending" && f.requestedBy !== me.uid);
+
+  const parts = [];
+  if (incoming.length) {
+    parts.push(`<p class="muted">Offene Anfragen an dich – annehmen geht in der App:</p>`);
+    parts.push(incoming.map((f) => `
+      <div class="listrow" style="cursor:default"><div class="grow">${escape(f.otherName || "Ohne Namen")}</div>
+      <span class="muted">wartet</span></div>`).join(""));
+  }
+  if (!accepted.length) {
+    parts.push(`<p class="muted">Noch keine Freunde.</p>`);
+  } else {
+    parts.push(accepted.map((f) => `
+      <div class="listrow" style="cursor:default">
+        <div class="grow"><div class="name">${escape(f.otherName || "Ohne Namen")}</div></div>
+        <button class="chip" data-friend="${escape(f.pairId)}">Vergleichen</button>
+      </div>`).join(""));
+  }
+  box.innerHTML = parts.join("");
+  box.querySelectorAll("[data-friend]").forEach((button) =>
+    button.addEventListener("click", () =>
+      openDetail({ type: "friend", pairId: button.dataset.friend })));
 }
 
 function renderTraining() {
@@ -745,7 +811,6 @@ $("newGroup").addEventListener("click", async () => {
   try {
     await setDoc(doc(fb.db, "groups", id), { name, ownerUid: me.uid, createdAt: now });
     await joinExisting(id, name, now);
-    await renderGroupsList();
     setTab("groups");
     openDetail({ type: "group", id });
   } catch (error) {
@@ -811,7 +876,6 @@ async function promptJoin(prefill) {
     if (!yes) return;
     await joinExisting(id, name, Date.now());
     await backfill(id);
-    await renderGroupsList();
     setTab("groups");
     openDetail({ type: "group", id });
   } catch (error) {
@@ -891,7 +955,6 @@ async function promptRedeem(prefill) {
       names: { [me.uid]: displayName || "Anonym", [invite.fromUid]: from },
     });
     await setDoc(doc(fb.db, "invites", inviteId), { acceptedBy: me.uid }, { merge: true });
-    await renderFriendsList();
     setTab("friends");
     openDetail({ type: "friend", pairId });
   } catch (error) {
