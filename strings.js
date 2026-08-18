@@ -38,7 +38,6 @@ const STRINGS = {
       "dich mit demselben Google-Konto an wie auf dem Handy, siehst du dort " +
       "dieselben Gruppen und Freunde.",
     homeBrowserButton: "Web-Version öffnen",
-    homeSource: "Quelltext auf",
     languageLabel: "Sprache",
     languageSystem: "System",
     languageDe: "Deutsch",
@@ -268,7 +267,6 @@ const STRINGS = {
       "in with the same Google account as on your phone to see the same " +
       "groups and friends there.",
     homeBrowserButton: "Open the web version",
-    homeSource: "Source on",
     languageLabel: "Language",
     languageSystem: "System",
     languageDe: "German",
