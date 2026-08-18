@@ -13,6 +13,7 @@
  */
 import { levelReps } from "../levels.js";
 import { ask } from "./dialogs.js";
+import { t } from "../strings.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -24,6 +25,9 @@ const PREPARE_SECONDS = 5;
  * Doppeltipper auf denselben Liegestuetz soll nicht zweimal zaehlen.
  */
 const MIN_REP_INTERVAL_MS = 400;
+
+/** Um so viele Sekunden verlaengert "+30 s" die Pause - derselbe Wert wie addRestSeconds(30) in der App. */
+const REST_EXTEND_SECONDS = 30;
 
 /** Die Phasen, in denen ein Training sein kann. */
 const PREPARE = "prepare";
@@ -62,6 +66,8 @@ export function runWorkout(level, restSeconds = 90) {
       adjust: $("wAdjust"),
       minus: $("wMinus"),
       plus: $("wPlus"),
+      restAdjust: $("wRestAdjust"),
+      addRest: $("wAddRest"),
       next: $("wNext"),
       stop: $("wStop"),
       abort: $("wAbort"),
@@ -98,17 +104,18 @@ export function runWorkout(level, restSeconds = 90) {
     };
 
     const draw = () => {
-      els.level.textContent = `Level ${level}`;
+      els.level.textContent = t("workoutLevel", level);
       drawPills();
       els.adjust.classList.toggle("hidden", phase !== SET);
+      els.restAdjust.classList.toggle("hidden", phase !== REST);
 
       if (phase === PREPARE) {
-        els.set.textContent = "Gleich geht es los";
+        els.set.textContent = t("workoutPrepareSet");
         els.count.textContent = String(secondsLeft);
-        els.of.textContent = "Sekunden";
+        els.of.textContent = t("workoutPrepareUnit");
         els.hint.textContent = "";
-        els.note.textContent = `Erster Satz: ${planned[0]} Wiederholungen`;
-        els.next.textContent = "Jetzt starten";
+        els.note.textContent = t("workoutPrepareNote", planned[0]);
+        els.next.textContent = t("workoutStartNow");
         els.stop.classList.add("hidden");
         screen.classList.remove("hot");
         return;
@@ -116,13 +123,12 @@ export function runWorkout(level, restSeconds = 90) {
 
       if (phase === REST) {
         const done = actual.reduce((sum, n) => sum + n, 0);
-        els.set.textContent = `Pause · ${actual.length} von ${planned.length} Sätzen geschafft`;
+        els.set.textContent = t("workoutRestSet", actual.length, planned.length);
         els.count.textContent = String(secondsLeft);
-        els.of.textContent = "Sekunden Pause";
+        els.of.textContent = t("workoutRestUnit");
         els.hint.textContent = "";
-        els.note.textContent =
-          `Nächster Satz: ${planned[setIndex]} Wiederholungen · bisher ${done} gesamt`;
-        els.next.textContent = "Pause überspringen";
+        els.note.textContent = t("workoutNextSet", planned[setIndex], done);
+        els.next.textContent = t("workoutSkipRest");
         els.stop.classList.remove("hidden");
         screen.classList.remove("hot");
         return;
@@ -130,14 +136,14 @@ export function runWorkout(level, restSeconds = 90) {
 
       // SET: dieselbe Formulierung wie "Ziel: %d" in der App.
       const remaining = planned.slice(setIndex + 1);
-      els.set.textContent = `Satz ${setIndex + 1} von ${planned.length}`;
+      els.set.textContent = t("workoutSetOf", setIndex + 1, planned.length);
       els.count.textContent = String(count);
-      els.of.textContent = `Ziel: ${planned[setIndex]}`;
-      els.hint.textContent = "Tippen, um zu zählen";
+      els.of.textContent = t("workoutTargetOf", planned[setIndex]);
+      els.hint.textContent = t("workoutTapHint");
       els.note.textContent = remaining.length
-        ? `Danach noch: ${remaining.join(" · ")}`
-        : "Letzter Satz";
-      els.next.textContent = "Satz beenden";
+        ? t("workoutThenAlso", remaining.join(" · "))
+        : t("workoutLastSet");
+      els.next.textContent = t("workoutFinishSet");
       els.stop.classList.add("hidden");
       // Ab dem Ziel färbt sich der Bildschirm. Man sieht es aus dem Augenwinkel,
       // ohne die Zahl lesen zu müssen.
@@ -179,6 +185,7 @@ export function runWorkout(level, restSeconds = 90) {
       els.tap.removeEventListener("click", tap);
       els.minus.removeEventListener("click", onMinus);
       els.plus.removeEventListener("click", onPlus);
+      els.addRest.removeEventListener("click", onAddRest);
       els.next.removeEventListener("click", onNext);
       els.stop.removeEventListener("click", onStop);
       els.abort.removeEventListener("click", onAbort);
@@ -274,6 +281,17 @@ export function runWorkout(level, restSeconds = 90) {
     /** Pause ueberspringen und sofort aufhoeren - nur zwischen den Saetzen. */
     const onStop = () => finish(true);
 
+    /**
+     * Verlaengert die laufende Pause - derselbe "+30 s"-Knopf wie in
+     * RestingContent in der App. `secondsLeft` steuert den laufenden Timer
+     * direkt, ein Neustart des Countdowns ist nicht noetig.
+     */
+    const onAddRest = () => {
+      if (phase !== REST) return;
+      secondsLeft += REST_EXTEND_SECONDS;
+      draw();
+    };
+
     const onAbort = async () => {
       const hasProgress = actual.some((n) => n > 0) || count > 0;
       if (!hasProgress) {
@@ -281,10 +299,10 @@ export function runWorkout(level, restSeconds = 90) {
         return;
       }
       const keep = await ask(
-        "Training beenden?",
-        "Du kannst die bisherigen Sätze speichern, oder das Training komplett verwerfen.",
-        "Beenden und speichern",
-        "Verwerfen",
+        t("workoutAbortTitle"),
+        t("workoutAbortBody"),
+        t("workoutAbortSave"),
+        t("workoutAbortDiscard"),
       );
       finish(keep);
     };
@@ -292,6 +310,7 @@ export function runWorkout(level, restSeconds = 90) {
     els.tap.addEventListener("click", tap);
     els.minus.addEventListener("click", onMinus);
     els.plus.addEventListener("click", onPlus);
+    els.addRest.addEventListener("click", onAddRest);
     els.next.addEventListener("click", onNext);
     els.stop.addEventListener("click", onStop);
     els.abort.addEventListener("click", onAbort);

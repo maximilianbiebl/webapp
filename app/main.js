@@ -22,11 +22,61 @@ import {
   loadGuestProfile, saveGuestProfile, loadGuestSessions, saveGuestSessions,
   hasGuestData, clearGuestData,
 } from "./local.js";
+import { t, getLanguage, setLanguage } from "../strings.js";
 
 const $ = (id) => document.getElementById(id);
 const show = (el, visible) => el.classList.toggle("hidden", !visible);
 const escape = (text) => String(text ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/** Formatiert Sekunden als m:ss - dieselbe Darstellung wie formatDuration() in der App. */
+function formatDuration(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remaining = seconds % 60;
+  return `${minutes}:${String(remaining).padStart(2, "0")}`;
+}
+
+const LANGUAGE_OPTIONS = [
+  ["system", "languageSystem"],
+  ["de", "languageDe"],
+  ["en", "languageEn"],
+];
+
+function languageOptionsHtml() {
+  return LANGUAGE_OPTIONS.map(([value, key]) => `<option value="${value}">${t(key)}</option>`).join("");
+}
+
+/**
+ * Uebersetzt jedes Element mit data-i18n neu - beim Laden und jedesmal, wenn
+ * sich die Sprache aendert. Text, der von main.js selbst gesetzt wird (Level,
+ * Zahlen, Dialoge), zieht seine Uebersetzung direkt aus t() und braucht diesen
+ * Umweg nicht.
+ */
+function applyTranslations() {
+  document.documentElement.lang = getLanguage() === "en" ? "en" : "de";
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const text = t(el.dataset.i18n);
+    el.textContent = text;
+    if (el.dataset.i18nAttr) el.setAttribute(el.dataset.i18nAttr, text);
+  });
+  const select = $("langSelect");
+  if (select) {
+    select.innerHTML = languageOptionsHtml();
+    select.value = getLanguage();
+  }
+}
+
+$("langSelect")?.addEventListener("change", (event) => setLanguage(event.target.value));
+window.addEventListener("liegestuetzen:language", () => {
+  applyTranslations();
+  if (me || guestMode) {
+    renderTraining();
+    renderQuickStats();
+    renderFullHistory();
+  }
+  render();
+});
+applyTranslations();
 
 const params = new URLSearchParams(location.search);
 let fb = null;
@@ -56,19 +106,18 @@ const state = {
   detail: null, // null | { type: "group", id } | { type: "friend", pairId }
 };
 
-const TAB_TITLES = {
-  training: "Training",
-  friends: "Freunde",
-  groups: "Gruppen",
-  history: "Verlauf",
+const TAB_TITLE_KEYS = {
+  training: "tabTraining",
+  friends: "tabFriends",
+  groups: "tabGroups",
+  history: "tabHistory",
 };
 
 if (params.get("code") || params.get("join") || params.get("invite")) {
   // Sonst steht da nur "Anmelden", und warum, weiss niemand.
   const note = document.createElement("p");
   note.className = "hint";
-  note.textContent =
-    "Du hast eine Einladung dabei. Melde dich an, dann wird sie gleich eingelöst.";
+  note.textContent = t("signInInviteHint");
   $("signIn").prepend(note);
 }
 
@@ -111,7 +160,7 @@ async function signInWithGoogle() {
     await signInWithPopup(fb.auth, new GoogleAuthProvider());
   } catch (error) {
     const box = $("signInError");
-    box.textContent = `Anmeldung fehlgeschlagen: ${error.code || error.message}`;
+    box.textContent = t("signInFailed", error.code || error.message);
     show(box, true);
   }
 }
@@ -161,7 +210,7 @@ function render() {
   show($("tab-detail"), showingDetail);
 
   if (!showingDetail) {
-    $("topTitle").textContent = TAB_TITLES[state.tab];
+    $("topTitle").textContent = t(TAB_TITLE_KEYS[state.tab]);
     return;
   }
   $("topTitle").textContent = "…";
@@ -420,7 +469,6 @@ async function start() {
   show($("friendsPanel"), !guestMode);
   show($("groupsGate"), guestMode);
   show($("groupsPanel"), !guestMode);
-  $("accountBtn").textContent = guestMode ? "Einstellungen" : "Konto";
 
   if (guestMode) {
     readOwnTrainingGuest();
@@ -522,16 +570,16 @@ function watchFriends() {
 function drawGroupsList(groups) {
   const box = $("groups");
   if (!groups.length) {
-    box.innerHTML = `<p class="muted">Noch in keiner Gruppe.</p>`;
+    box.innerHTML = `<p class="muted">${t("groupsEmpty")}</p>`;
     return;
   }
   box.innerHTML = groups.map((g) => `
     <div class="listrow" style="cursor:default">
       <div class="grow">
-        <div class="name">${escape(g.name || "Gruppe ohne Namen")}</div>
-        ${g.sharing === false ? '<div class="muted">Teilen pausiert</div>' : ""}
+        <div class="name">${escape(g.name || t("groupsUnnamed"))}</div>
+        ${g.sharing === false ? `<div class="muted">${t("groupsSharingPaused")}</div>` : ""}
       </div>
-      <button class="chip" data-group="${escape(g.id)}">Ansehen</button>
+      <button class="chip" data-group="${escape(g.id)}">${t("groupsView")}</button>
     </div>`).join("");
   box.querySelectorAll("[data-group]").forEach((button) =>
     button.addEventListener("click", () => openDetail({ type: "group", id: button.dataset.group })));
@@ -545,18 +593,18 @@ function drawFriendsList(all) {
 
   const parts = [];
   if (incoming.length) {
-    parts.push(`<p class="muted">Offene Anfragen an dich – annehmen geht in der App:</p>`);
+    parts.push(`<p class="muted">${t("friendsIncomingHint")}</p>`);
     parts.push(incoming.map((f) => `
-      <div class="listrow" style="cursor:default"><div class="grow">${escape(f.otherName || "Ohne Namen")}</div>
-      <span class="muted">wartet</span></div>`).join(""));
+      <div class="listrow" style="cursor:default"><div class="grow">${escape(f.otherName || t("friendsUnnamed"))}</div>
+      <span class="muted">${t("friendsWaiting")}</span></div>`).join(""));
   }
   if (!accepted.length) {
-    parts.push(`<p class="muted">Noch keine Freunde.</p>`);
+    parts.push(`<p class="muted">${t("friendsEmpty")}</p>`);
   } else {
     parts.push(accepted.map((f) => `
       <div class="listrow" style="cursor:default">
-        <div class="grow"><div class="name">${escape(f.otherName || "Ohne Namen")}</div></div>
-        <button class="chip" data-friend="${escape(f.pairId)}">Vergleichen</button>
+        <div class="grow"><div class="name">${escape(f.otherName || t("friendsUnnamed"))}</div></div>
+        <button class="chip" data-friend="${escape(f.pairId)}">${t("friendsCompare")}</button>
       </div>`).join(""));
   }
   box.innerHTML = parts.join("");
@@ -567,11 +615,14 @@ function drawFriendsList(all) {
 
 function renderTraining() {
   const reps = levelReps(profile.level);
-  $("levelTitle").textContent = `Level ${profile.level} von ${LEVEL_COUNT}`;
+  $("levelTitle").textContent = t("levelOf", profile.level, LEVEL_COUNT);
   $("setPills").innerHTML = reps.map((n) => `<span>${n}</span>`).join("");
-  $("levelSummary").textContent =
-    `${levelTotal(profile.level)} Wiederholungen in ${reps.length} Sätzen, ` +
-    `${profile.restSeconds || 90} Sekunden Pause dazwischen.`;
+  $("levelSummary").textContent = t(
+    "levelSummary",
+    levelTotal(profile.level),
+    reps.length,
+    profile.restSeconds || 90,
+  );
   $("levelDown").disabled = profile.level <= 1;
   $("levelUp").disabled = profile.level >= LEVEL_COUNT;
 
@@ -579,8 +630,7 @@ function renderTraining() {
   const suggested = profile.lastTestResult ? suggestLevel(profile.lastTestResult) : 0;
   const hint = $("levelHint");
   if (suggested && suggested !== profile.level) {
-    hint.textContent =
-      `Dein Test von ${profile.lastTestResult} am Stück spricht für Level ${suggested}.`;
+    hint.textContent = t("levelHint", profile.lastTestResult, suggested);
     hint.classList.remove("hidden");
   } else {
     hint.classList.add("hidden");
@@ -594,10 +644,8 @@ async function showSummary(workout) {
   const complete = workout.actualReps.every((n, i) => n >= workout.plannedReps[i]) &&
     workout.actualReps.length === levelReps(workout.level).length;
   await say(
-    complete ? "Training geschafft" : "Training beendet",
-    `${done} Wiederholungen in ${workout.actualReps.length} Sätzen ` +
-    `(${workout.actualReps.join(" · ")}), geplant waren ${target}. ` +
-    `Bester Satz: ${bestSet(workout)}.`,
+    t(complete ? "workoutDoneTitle" : "workoutEndedTitle"),
+    t("workoutSummary", done, workout.actualReps.length, workout.actualReps.join(" · "), target, bestSet(workout)),
   );
 }
 
@@ -605,66 +653,62 @@ async function showSummary(workout) {
 function renderQuickStats() {
   const s = statistics(sessions);
   const tiles = [
-    [s.totalReps, "Wiederholungen"],
-    [s.workoutCount, "Einheiten"],
-    [s.currentStreakDays, "Tage in Folge"],
+    [s.totalReps, t("statReps")],
+    [s.workoutCount, t("statWorkouts")],
+    [s.currentStreakDays, t("statStreak")],
   ];
   $("quickTiles").innerHTML = tiles
     .map(([n, label]) => `<div><div class="n">${n}</div><div class="l">${label}</div></div>`)
     .join("");
 
   const progress = goalProgress(s.bestSet, profile.goalReps);
-  $("goalLine").textContent =
-    `Ziel: ${s.bestSet} von ${profile.goalReps} am Stück (${Math.round(progress * 100)} %) — ändern`;
+  $("goalLine").textContent = t("goalLine", s.bestSet, profile.goalReps, Math.round(progress * 100));
   $("goalBar").style.width = `${progress * 100}%`;
 
   $("testLine").textContent = profile.lastTestResult
-    ? `Letzter Maximaltest: ${profile.lastTestResult} am Stück`
-    : "Noch kein Maximaltest gemacht — der geht in der App.";
+    ? t("testLineDone", profile.lastTestResult)
+    : t("testLineNone");
 }
 
 /** Der volle Verlauf mit allen Zahlen, wie HistoryScreen in der App. */
 function renderFullHistory() {
   const s = statistics(sessions);
   const tiles = [
-    [s.totalReps, "Wiederholungen"],
-    [s.bestSet, "Bester Satz"],
-    [s.currentStreakDays, "Tage in Folge"],
-    [s.workoutCount, "Einheiten"],
-    [s.bestSession, "Beste Einheit"],
-    [s.repsLast7Days, "Letzte 7 Tage"],
+    [s.totalReps, t("statReps")],
+    [s.bestSet, t("statBestSet")],
+    [s.currentStreakDays, t("statStreak")],
+    [s.workoutCount, t("statWorkouts")],
+    [s.bestSession, t("statBestSession")],
+    [s.repsLast7Days, t("statLast7")],
   ];
   $("fullTiles").innerHTML = tiles
     .map(([n, label]) => `<div><div class="n">${n}</div><div class="l">${label}</div></div>`)
     .join("");
 
   const sorted = [...sessions].sort((a, b) => b.timestampMillis - a.timestampMillis);
+  const dateLocale = getLanguage() === "en" ? "en-US" : "de-DE";
   $("fullHistory").innerHTML = sorted.length
     ? sorted.map((entry) => `
         <div class="listrow" style="cursor:default">
           <div class="grow">
-            <div class="name">${totalReps(entry)} Wiederholungen · Level ${entry.level}</div>
+            <div class="name">${t("historyReps", totalReps(entry), entry.level)}</div>
             <div class="muted">${escape(entry.actualReps.join(" · "))}</div>
           </div>
-          <div class="muted">${new Date(entry.timestampMillis).toLocaleDateString("de-DE")}</div>
-          <button class="chip" data-delete="${escape(entry.id)}">Löschen</button>
+          <div class="muted">${new Date(entry.timestampMillis).toLocaleDateString(dateLocale)}</div>
+          <button class="chip" data-delete="${escape(entry.id)}">${t("deleteBtn")}</button>
         </div>`).join("")
-    : `<p class="muted">Noch kein Training aufgezeichnet.</p>`;
+    : `<p class="muted">${t("historyEmpty")}</p>`;
 
   $("fullHistory").querySelectorAll("[data-delete]").forEach((button) =>
     button.addEventListener("click", async () => {
-      const yes = await ask(
-        "Einheit löschen",
-        "Sie verschwindet auch aus jeder Gruppe und jedem Vergleich, in dem sie stand.",
-        "Löschen",
-      );
+      const yes = await ask(t("deleteTitle"), t("deleteBody"), t("deleteBtn"), t("cancel"));
       if (!yes) return;
       try {
         await deleteSession(button.dataset.delete);
         renderFullHistory();
         renderQuickStats();
       } catch (error) {
-        await say("Nicht gelöscht", error.code || error.message);
+        await say(t("deleteFailedTitle"), error.code || error.message);
       }
     }));
 }
@@ -672,7 +716,7 @@ function renderFullHistory() {
 // Das Ziel laesst sich hier genauso setzen wie in der App - sonst waere es das
 // einzige, wofuer man zum Telefon greifen muesste.
 $("goalLine").addEventListener("click", async () => {
-  const entered = await askForText("Dein Ziel", "Liegestütze am Stück", "Speichern");
+  const entered = await askForText(t("goalPrompt"), t("goalPromptLabel"), t("goalPromptSave"));
   const wanted = Number(entered);
   if (!Number.isFinite(wanted)) return;
   profile.goalReps = Math.min(Math.max(Math.round(wanted), 20), 300);
@@ -680,7 +724,7 @@ $("goalLine").addEventListener("click", async () => {
   try {
     await writeProfile();
   } catch (error) {
-    await say("Nicht gespeichert", error.code || error.message);
+    await say(t("saveFailedTitle"), error.code || error.message);
   }
 });
 $("goalLine").style.cursor = "pointer";
@@ -700,7 +744,7 @@ $("allLevels").addEventListener("click", () => {
     return `
       <div class="listrow ${current ? "current" : ""}" data-level="${number}">
         <div class="grow">
-          <div class="name">Level ${number}${current ? " · dein Level" : ""}</div>
+          <div class="name">${t("workoutLevel", number)}${current ? t("yourLevelSuffix") : ""}</div>
           <div class="muted">${reps.join(" · ")}</div>
         </div>
         <div class="muted">${levelTotal(number)}</div>
@@ -709,10 +753,10 @@ $("allLevels").addEventListener("click", () => {
 
   const dialog = document.createElement("dialog");
   dialog.innerHTML = `
-    <h2>Alle Level</h2>
-    <p class="muted">Tippe auf ein Level, um dorthin zu wechseln.</p>
+    <h2>${t("allLevelsTitle")}</h2>
+    <p class="muted">${t("allLevelsHint")}</p>
     <div style="max-height:60vh;overflow:auto">${rows}</div>
-    <div class="actions"><button class="ghost">Schließen</button></div>`;
+    <div class="actions"><button class="ghost">${t("allLevelsClose")}</button></div>`;
   document.body.append(dialog);
 
   dialog.querySelector("button").addEventListener("click", () => dialog.close());
@@ -742,7 +786,7 @@ async function setLevel(wanted) {
   try {
     await writeProfile();
   } catch (error) {
-    await say("Nicht gespeichert", error.code || error.message);
+    await say(t("saveFailedTitle"), error.code || error.message);
   }
 }
 
@@ -756,16 +800,12 @@ $("startWorkout").addEventListener("click", async () => {
   try {
     await storeSession(workout);
   } catch (error) {
-    await say(
-      "Nicht überall gespeichert",
-      `Dein Training ist gezählt, konnte aber nicht vollständig hochgeladen werden: ` +
-      `${error.code || error.message}`,
-    );
+    await say(t("workoutUploadFailedTitle"), t("workoutUploadFailed", error.code || error.message));
   }
 });
 
-const RANGES = [[7, "7 Tage"], [30, "30 Tage"], [0, "Gesamt"]];
-const SORTS = [["reps", "Wdh."], ["best", "Bester"], ["days", "Tage"]];
+const RANGES = () => [[7, t("range7")], [30, t("range30")], [0, t("rangeAll")]];
+const SORTS = () => [["reps", t("sortReps")], ["best", t("sortBest")], ["days", t("sortDays")]];
 
 function chips(entries, current, attribute) {
   return entries.map(([value, label]) =>
@@ -775,15 +815,15 @@ function chips(entries, current, attribute) {
 
 async function drawGroupDetail(groupId) {
   const panel = $("tab-detail");
-  panel.innerHTML = `<div class="card"><p class="muted">Wird geladen …</p></div>`;
+  panel.innerHTML = `<div class="card"><p class="muted">${t("loading")}</p></div>`;
   let group;
   try {
     group = await readGroup(groupId);
   } catch (error) {
-    panel.innerHTML = `<div class="card"><p class="muted error">Kein Zugriff: ${escape(error.code || error.message)}</p></div>`;
+    panel.innerHTML = `<div class="card"><p class="muted error">${t("noAccess", escape(error.code || error.message))}</p></div>`;
     return;
   }
-  $("topTitle").textContent = group.name || "Gruppe ohne Namen";
+  $("topTitle").textContent = group.name || t("groupsUnnamed");
 
   const draw = () => {
     const rows = buildLeaderboard(group.members, group.entries, range, sort);
@@ -791,24 +831,24 @@ async function drawGroupDetail(groupId) {
     const average = rows.length ? Math.floor(total / rows.length) : 0;
     panel.innerHTML = `
       <div class="card stack">
-        <p class="muted">Zeitraum</p>
-        <div class="chips">${chips(RANGES, range, "range")}</div>
-        <p class="muted">Sortierung</p>
-        <div class="chips">${chips(SORTS, sort, "sort")}</div>
+        <p class="muted">${t("rangeLabel")}</p>
+        <div class="chips">${chips(RANGES(), range, "range")}</div>
+        <p class="muted">${t("sortLabel")}</p>
+        <div class="chips">${chips(SORTS(), sort, "sort")}</div>
         <table>
-          <thead><tr><th>Name</th><th>Wdh.</th><th>Bester</th><th>Tage</th></tr></thead>
+          <thead><tr><th>${t("groupColName")}</th><th>${t("groupColReps")}</th><th>${t("groupColBest")}</th><th>${t("groupColDays")}</th></tr></thead>
           <tbody>${rows.map((r, index) => `
             <tr class="${r.uid === me.uid ? "self" : ""}">
-              <td>${index + 1}. ${escape(r.displayName || "Ohne Namen")}
-                ${!r.sharing ? '<span class="sub">Teilen pausiert</span>'
-                  : r.level ? `<span class="sub">Level ${r.level}</span>` : ""}</td>
+              <td>${index + 1}. ${escape(r.displayName || t("friendsUnnamed"))}
+                ${!r.sharing ? `<span class="sub">${t("groupsSharingPaused")}</span>`
+                  : r.level ? `<span class="sub">${t("workoutLevel", r.level)}</span>` : ""}</td>
               <td>${r.totalReps}</td><td>${r.bestSet}</td><td>${r.days}</td>
             </tr>`).join("")}
           </tbody>
         </table>
-        <p class="muted">Gruppe gesamt ${total} · Durchschnitt ${average}</p>
-        <p class="muted">Gruppen-ID: <span class="code">${escape(group.id)}</span></p>
-        <p class="muted">Verwalten, umbenennen und verlassen geht in der App.</p>
+        <p class="muted">${t("groupTotal", total, average)}</p>
+        <p class="muted">${t("groupIdLabel")} <span class="code">${escape(group.id)}</span></p>
+        <p class="muted">${t("groupManageHint")}</p>
       </div>`;
     panel.querySelectorAll("[data-range]").forEach((chip) =>
       chip.addEventListener("click", () => { range = Number(chip.dataset.range); draw(); }));
@@ -820,29 +860,29 @@ async function drawGroupDetail(groupId) {
 
 async function drawFriendDetail(pairId) {
   const panel = $("tab-detail");
-  panel.innerHTML = `<div class="card"><p class="muted">Wird geladen …</p></div>`;
+  panel.innerHTML = `<div class="card"><p class="muted">${t("loading")}</p></div>`;
   const friendships = await readFriendships();
   const friendship = friendships.find((f) => f.pairId === pairId);
   if (!friendship) {
-    panel.innerHTML = `<div class="card"><p class="muted">Diese Freundschaft besteht nicht mehr.</p></div>`;
-    $("topTitle").textContent = "Nicht mehr verbunden";
+    panel.innerHTML = `<div class="card"><p class="muted">${t("friendGone")}</p></div>`;
+    $("topTitle").textContent = t("friendGoneTitle");
     return;
   }
-  $("topTitle").textContent = friendship.otherName || "Ohne Namen";
+  $("topTitle").textContent = friendship.otherName || t("friendsUnnamed");
 
   let entries;
   try {
     const snapshot = await getDocs(collection(fb.db, "friendships", pairId, "entries"));
     entries = snapshot.docs.map((d) => d.data());
   } catch (error) {
-    panel.innerHTML = `<div class="card"><p class="muted error">Kein Zugriff: ${escape(error.code || error.message)}</p></div>`;
+    panel.innerHTML = `<div class="card"><p class="muted error">${t("noAccess", escape(error.code || error.message))}</p></div>`;
     return;
   }
 
   const draw = () => {
     const c = buildComparison(
-      me.uid, displayName || "Ich", friendship.otherUid,
-      friendship.otherName || "Ohne Namen", entries, range,
+      me.uid, displayName || t("anonymousName"), friendship.otherUid,
+      friendship.otherName || t("friendsUnnamed"), entries, range,
     );
     const line = (label, a, b) => `
       <div class="value ${a > b ? "ahead" : ""}">${a}</div>
@@ -850,22 +890,22 @@ async function drawFriendDetail(pairId) {
       <div class="value ${b > a ? "ahead" : ""}">${b}</div>`;
     panel.innerHTML = `
       <div class="card stack">
-        <p class="muted">Zeitraum</p>
-        <div class="chips">${chips(RANGES, range, "range")}</div>
+        <p class="muted">${t("rangeLabel")}</p>
+        <div class="chips">${chips(RANGES(), range, "range")}</div>
         <div class="compare">
           <div class="head">${escape(c.own.displayName)}</div><div></div>
           <div class="head">${escape(c.other.displayName)}</div>
-          ${line("Wiederholungen", c.own.totalReps, c.other.totalReps)}
-          ${line("Bester Satz", c.own.bestSet, c.other.bestSet)}
-          ${line("Trainingstage", c.own.days, c.other.days)}
-          ${line("Level", c.own.level, c.other.level)}
-          <div class="label">${escape(c.own.lastTrainedOn || "noch nie")}</div>
-          <div class="label">zuletzt trainiert</div>
-          <div class="label">${escape(c.other.lastTrainedOn || "noch nie")}</div>
+          ${line(t("compareRepsLabel"), c.own.totalReps, c.other.totalReps)}
+          ${line(t("compareBestLabel"), c.own.bestSet, c.other.bestSet)}
+          ${line(t("compareDaysLabel"), c.own.days, c.other.days)}
+          ${line(t("compareLevelLabel"), c.own.level, c.other.level)}
+          <div class="label">${escape(c.own.lastTrainedOn || t("compareNeverTrained"))}</div>
+          <div class="label">${t("compareLastTrained")}</div>
+          <div class="label">${escape(c.other.lastTrainedOn || t("compareNeverTrained"))}</div>
         </div>
         ${friendship.pausedBy.includes(friendship.otherUid)
-          ? '<p class="muted">Diese Person teilt ihre Zahlen mit dir gerade nicht.</p>' : ""}
-        <p class="muted">Entfernen, blockieren und Teilen pausieren geht in der App.</p>
+          ? `<p class="muted">${t("comparePausedHint")}</p>` : ""}
+        <p class="muted">${t("friendManageHint")}</p>
       </div>`;
     panel.querySelectorAll("[data-range]").forEach((chip) =>
       chip.addEventListener("click", () => { range = Number(chip.dataset.range); draw(); }));
@@ -885,88 +925,113 @@ async function drawFriendDetail(pairId) {
  */
 $("accountBtn").addEventListener("click", () => {
   if (guestMode) {
-    openGuestSettingsDialog();
+    openSettingsDialog({ guest: true });
     return;
   }
+  openSettingsDialog({ guest: false });
+});
+
+/** 30 bis 240 Sekunden in Schritten von 30 - dieselbe Spanne wie RestCard in der App. */
+function clampRestSeconds(seconds) {
+  const rounded = Math.round(seconds / 30) * 30;
+  return Math.min(Math.max(rounded, 30), 240);
+}
+
+/** Baut Satzpause-Anzeige und -Regler, wie RestCard in der App: eine grosse m:ss-Zahl ueber dem Schieberegler. */
+function restSliderMarkup(presetSeconds) {
+  const seconds = presetSeconds ?? (profile.restSeconds || 90);
+  return `
+    <p class="muted" style="margin-top:12px">${t("settingsRestTitle")}</p>
+    <p class="restValue" id="restValue">${formatDuration(seconds)}</p>
+    <input type="range" id="restSlider" min="30" max="240" step="30" value="${seconds}">`;
+}
+
+/** Live-Anzeige beim Ziehen; gespeichert wird erst beim Klick auf "Speichern". */
+function wireRestSlider(dialog) {
+  const slider = dialog.querySelector("#restSlider");
+  const value = dialog.querySelector("#restValue");
+  slider.addEventListener("input", () => {
+    value.textContent = formatDuration(clampRestSeconds(Number(slider.value)));
+  });
+  return () => clampRestSeconds(Number(slider.value));
+}
+
+function languageSelectMarkup() {
+  return `
+    <p class="muted" style="margin-top:12px">${t("languageLabel")}</p>
+    <select id="langField">${languageOptionsHtml()}</select>`;
+}
+
+function wireLanguageSelect(dialog) {
+  const select = dialog.querySelector("#langField");
+  select.value = getLanguage();
+  select.addEventListener("change", () => setLanguage(select.value));
+}
+
+/**
+ * Die Einstellungen: Satzpause und Sprache immer, Anzeigename und Abmelden
+ * nur mit Konto. Kein Konto-Loeschen hier - das ist ein mehrschrittiger
+ * Vorgang (Profil weg, dann das Konto selbst) und bleibt bewusst der App
+ * vorbehalten, wo er schon getestet ist.
+ */
+function openSettingsDialog({ guest, presetRest }) {
   const dialog = document.createElement("dialog");
   dialog.innerHTML = `
-    <h2>Konto</h2>
-    <p class="muted">${escape(me.email || "Anonymes Konto")}</p>
-    <input type="text" id="nameField" placeholder="Anzeigename" autocomplete="off" value="${escape(displayName)}">
-    <p class="muted" style="margin-top:12px">Satzpause</p>
-    <input type="text" inputmode="numeric" id="restField" placeholder="Sekunden" value="${profile.restSeconds || 90}">
+    <h2>${t("settingsTitle")}</h2>
+    <p class="muted">${guest ? t("settingsGuestHint") : t("settingsAccountEmail", escape(me.email))}</p>
+    ${guest ? "" : `<input type="text" id="nameField" placeholder="${t("settingsNamePlaceholder")}" autocomplete="off" value="${escape(displayName)}">`}
+    ${languageSelectMarkup()}
+    ${restSliderMarkup(presetRest)}
     <div class="actions">
-      <button class="ghost" id="signOutBtn">Abmelden</button>
-      <button id="saveNameBtn">Speichern</button>
-    </div>`;
+      <button class="ghost" id="closeBtn">${t("settingsClose")}</button>
+      ${guest ? "" : `<button class="ghost" id="signOutBtn">${t("settingsSignOut")}</button>`}
+      <button id="saveBtn">${t("settingsSave")}</button>
+    </div>
+    ${guest ? `
+      <p class="muted" style="margin-top:16px">${t("settingsGuestConnect")}</p>
+      <button class="wide" id="signInBtn">${t("settingsSignInBtn")}</button>` : ""}`;
   document.body.append(dialog);
   dialog.addEventListener("close", () => dialog.remove());
 
-  dialog.querySelector("#saveNameBtn").addEventListener("click", async () => {
-    const name = dialog.querySelector("#nameField").value.trim().slice(0, 40);
-    const rest = clampRestSeconds(dialog.querySelector("#restField").value);
+  const readRest = wireRestSlider(dialog);
+  wireLanguageSelect(dialog);
+
+  // Die Sprache kann sich aendern, waehrend der Dialog offen ist - dann wird
+  // er mit der noch nicht gespeicherten Satzpause neu aufgebaut, statt mit
+  // veralteten Beschriftungen stehen zu bleiben.
+  const onLanguageChange = () => {
+    const rest = readRest();
     dialog.close();
-    if (name && name !== displayName) await saveDisplayName(name);
+    openSettingsDialog({ guest, presetRest: rest });
+  };
+  window.addEventListener("liegestuetzen:language", onLanguageChange);
+  dialog.addEventListener("close", () => window.removeEventListener("liegestuetzen:language", onLanguageChange));
+
+  dialog.querySelector("#closeBtn").addEventListener("click", () => dialog.close());
+  dialog.querySelector("#saveBtn").addEventListener("click", async () => {
+    const rest = readRest();
+    dialog.close();
+    if (!guest) {
+      const name = dialog.querySelector("#nameField").value.trim().slice(0, 40);
+      if (name && name !== displayName) await saveDisplayName(name);
+    }
     if (rest !== (profile.restSeconds || 90)) {
       await writeRestSeconds(rest);
       renderTraining();
     }
   });
-  dialog.querySelector("#signOutBtn").addEventListener("click", async () => {
-    dialog.close();
-    const yes = await ask(
-      "Abmelden",
-      "Du meldest dich von diesem Browser ab. Dein Training auf deinem Telefon bleibt " +
-      "erhalten. Mit demselben Google-Konto kommst du jederzeit zurück.",
-      "Abmelden",
-    );
-    if (yes) await signOut(fb.auth);
-  });
-
-  dialog.showModal();
-});
-
-/** 5 bis 300 Sekunden - dieselbe Spanne wie RestCard in der App. */
-function clampRestSeconds(entered) {
-  const parsed = Math.round(Number(entered));
-  if (!Number.isFinite(parsed)) return profile.restSeconds || 90;
-  return Math.min(Math.max(parsed, 5), 300);
-}
-
-/**
- * Die Einstellungen fuer Gaeste: nur die Satzpause, dazu ein Weg zum Konto.
- * Freunde, Gruppen und der Anzeigename brauchen zwangslaeufig eine Anmeldung.
- */
-function openGuestSettingsDialog() {
-  const dialog = document.createElement("dialog");
-  dialog.innerHTML = `
-    <h2>Einstellungen</h2>
-    <p class="muted">Ohne Konto bleibt dein Training auf diesem Gerät.</p>
-    <p class="muted" style="margin-top:12px">Satzpause</p>
-    <input type="text" inputmode="numeric" id="restField" placeholder="Sekunden" value="${profile.restSeconds || 90}">
-    <div class="actions">
-      <button class="ghost" id="closeBtn">Schließen</button>
-      <button id="saveRestBtn">Speichern</button>
-    </div>
-    <p class="muted" style="margin-top:16px">
-      Für Freunde und Gruppen brauchst du ein Konto.
-    </p>
-    <button class="wide" id="signInBtn">Anmelden</button>`;
-  document.body.append(dialog);
-  dialog.addEventListener("close", () => dialog.remove());
-
-  dialog.querySelector("#closeBtn").addEventListener("click", () => dialog.close());
-  dialog.querySelector("#saveRestBtn").addEventListener("click", async () => {
-    const rest = clampRestSeconds(dialog.querySelector("#restField").value);
-    dialog.close();
-    if (rest === (profile.restSeconds || 90)) return;
-    await writeRestSeconds(rest);
-    renderTraining();
-  });
-  dialog.querySelector("#signInBtn").addEventListener("click", () => {
-    dialog.close();
-    leaveGuestModeForSignIn();
-  });
+  if (guest) {
+    dialog.querySelector("#signInBtn").addEventListener("click", () => {
+      dialog.close();
+      leaveGuestModeForSignIn();
+    });
+  } else {
+    dialog.querySelector("#signOutBtn").addEventListener("click", async () => {
+      dialog.close();
+      const yes = await ask(t("signOutTitle"), t("signOutBody"), t("signOutConfirm"), t("cancel"));
+      if (yes) await signOut(fb.auth);
+    });
+  }
 
   dialog.showModal();
 }
@@ -992,7 +1057,7 @@ async function saveDisplayName(name) {
 /* -------------------------------------------------------- Gruppen und Freunde */
 
 $("newGroup").addEventListener("click", async () => {
-  const entered = await askForText("Neue Gruppe", "Name der Gruppe", "Anlegen");
+  const entered = await askForText(t("newGroupTitle"), t("newGroupLabel"), t("createBtn"));
   if (!entered) return;
   const name = entered.slice(0, 40);
   const id = randomId();
@@ -1003,7 +1068,7 @@ $("newGroup").addEventListener("click", async () => {
     setTab("groups");
     openDetail({ type: "group", id });
   } catch (error) {
-    await say("Anlegen fehlgeschlagen", error.code || error.message);
+    await say(t("createFailedTitle"), error.code || error.message);
   }
 });
 
@@ -1022,53 +1087,46 @@ async function createFriendInvite() {
   try {
     await setDoc(doc(fb.db, "invites", inviteId), {
       fromUid: me.uid,
-      fromDisplayName: displayName || "Anonym",
+      fromDisplayName: displayName || t("anonymousName"),
       createdAt: now,
       expiresAt: now + 7 * 86400000,
     });
     const link = `${location.origin}${location.pathname.replace(/app\/?$/, "f/")}?id=${inviteId}`;
     await navigator.clipboard.writeText(link).catch(() => {});
-    await say(
-      "Einladung erstellt",
-      `Der Link ist in der Zwischenablage und sieben Tage gültig: ${link}`,
-    );
+    await say(t("inviteCreatedTitle"), t("inviteCreated", link));
   } catch (error) {
-    await say("Anlegen fehlgeschlagen", error.code || error.message);
+    await say(t("createFailedTitle"), error.code || error.message);
   }
 }
 
 async function promptJoin(prefill) {
-  const input = prefill || await askForText("Gruppe beitreten", "Gruppen-ID oder Link", "Weiter");
+  const input = prefill || await askForText(t("joinGroupTitle"), t("joinGroupLabel"), t("nextBtn"));
   const id = parseId(input);
   if (!id) {
-    if (input) await say("Ungültig", "Das sieht nicht nach einer Gruppen-ID aus.");
+    if (input) await say(t("invalidTitle"), t("invalidCode"));
     return;
   }
   try {
     const snapshot = await getDoc(doc(fb.db, "groups", id));
     if (!snapshot.exists()) {
-      await say("Nicht gefunden", "Zu diesem Code gibt es keine Gruppe.");
+      await say(t("notFoundTitle"), t("groupNotFound"));
       return;
     }
-    const name = snapshot.data().name || "Gruppe ohne Namen";
+    const name = snapshot.data().name || t("groupsUnnamed");
     const memberDoc = await getDoc(doc(fb.db, "groups", id, "members", me.uid));
     if (memberDoc.exists()) {
       setTab("groups");
       openDetail({ type: "group", id });
       return;
     }
-    const yes = await ask(
-      "Gruppe beitreten",
-      `„${name}" beitreten? Deine Trainingszahlen erscheinen dann in der Bestenliste dieser Gruppe.`,
-      "Beitreten",
-    );
+    const yes = await ask(t("joinGroupTitle"), t("joinGroupQuestion", name), t("joinBtn"), t("cancel"));
     if (!yes) return;
     await joinExisting(id, name, Date.now());
     await backfill(id);
     setTab("groups");
     openDetail({ type: "group", id });
   } catch (error) {
-    await say("Beitreten fehlgeschlagen", error.code || error.message);
+    await say(t("joinFailedTitle"), error.code || error.message);
   }
 }
 
@@ -1093,7 +1151,7 @@ async function backfill(groupId) {
 
 async function joinExisting(groupId, groupName, now) {
   await setDoc(doc(fb.db, "groups", groupId, "members", me.uid), {
-    uid: me.uid, displayName: displayName || "Anonym", joinedAt: now, sharing: true,
+    uid: me.uid, displayName: displayName || t("anonymousName"), joinedAt: now, sharing: true,
   }, { merge: true });
   await setDoc(doc(fb.db, "users", me.uid, "memberships", groupId), {
     name: groupName, joinedAt: now, sharing: true,
@@ -1101,36 +1159,29 @@ async function joinExisting(groupId, groupName, now) {
 }
 
 async function promptRedeem(prefill) {
-  const input = prefill || await askForText("Einladung einlösen", "Code oder Link", "Weiter");
+  const input = prefill || await askForText(t("redeemTitle"), t("redeemLabel"), t("nextBtn"));
   const inviteId = parseId(input);
   if (!inviteId) {
-    if (input) await say("Ungültig", "Das sieht nicht nach einem Einladungscode aus.");
+    if (input) await say(t("invalidTitle"), t("invalidInviteCode"));
     return;
   }
   try {
     const snapshot = await getDoc(doc(fb.db, "invites", inviteId));
     if (!snapshot.exists()) {
-      await say("Nicht gefunden", "Zu diesem Code gibt es keine Einladung.");
+      await say(t("notFoundTitle"), t("inviteNotFound"));
       return;
     }
     const invite = snapshot.data();
     if (invite.fromUid === me.uid) {
-      await say("Deine eigene Einladung", "Diesen Code hast du selbst ausgestellt.");
+      await say(t("inviteOwnTitle"), t("inviteOwn"));
       return;
     }
     if (invite.acceptedBy || invite.expiresAt < Date.now()) {
-      await say(
-        "Nicht mehr gültig",
-        "Diese Einladung ist abgelaufen oder wurde schon eingelöst. Lass dir eine neue schicken.",
-      );
+      await say(t("inviteExpiredTitle"), t("inviteExpired"));
       return;
     }
-    const from = invite.fromDisplayName || "Jemand";
-    const yes = await ask(
-      `Einladung von ${from}`,
-      `Mit ${from} verbinden? Ihr seht dann gegenseitig eure Trainingszahlen.`,
-      "Verbinden",
-    );
+    const from = invite.fromDisplayName || t("someoneName");
+    const yes = await ask(t("inviteFrom", from), t("inviteFromQuestion", from), t("connectBtn"), t("cancel"));
     if (!yes) return;
     const uids = [me.uid, invite.fromUid].sort();
     const pairId = uids.join("_");
@@ -1141,13 +1192,13 @@ async function promptRedeem(prefill) {
       viaInvite: inviteId,
       createdAt: Date.now(),
       pausedBy: [],
-      names: { [me.uid]: displayName || "Anonym", [invite.fromUid]: from },
+      names: { [me.uid]: displayName || t("anonymousName"), [invite.fromUid]: from },
     });
     await setDoc(doc(fb.db, "invites", inviteId), { acceptedBy: me.uid }, { merge: true });
     setTab("friends");
     openDetail({ type: "friend", pairId });
   } catch (error) {
-    await say("Einlösen fehlgeschlagen", error.code || error.message);
+    await say(t("redeemFailedTitle"), error.code || error.message);
   }
 }
 
@@ -1187,13 +1238,9 @@ async function resolveCode(code) {
       await promptRedeem(code);
       return;
     }
-    await say(
-      "Nichts gefunden",
-      "Zu diesem Code gibt es weder eine Gruppe noch eine Einladung. " +
-      "Vielleicht ein Tippfehler, oder die Einladung wurde zurückgezogen.",
-    );
+    await say(t("codeNothingFound"), t("codeNotFound"));
   } catch (error) {
-    await say("Das ging schief", `Der Code ließ sich nicht prüfen: ${error.code || error.message}`);
+    await say(t("codeCheckFailedTitle"), t("codeCheckFailed", error.code || error.message));
   }
 }
 

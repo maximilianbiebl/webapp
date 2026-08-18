@@ -42,11 +42,32 @@ p { margin: 0 0 12px; }
 .muted { color: var(--muted); font-size: 0.86rem; }
 .accent { color: var(--accent); }
 
-header.site { padding: 28px 16px 8px; max-width: 680px; margin: 0 auto; }
+header.site {
+  padding: 28px 16px 8px;
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
 .brand .dot {
   width: 14px; height: 14px; border-radius: 50%;
   background: var(--accent);
+}
+
+/* Die Sprachwahl - ein natives <select>, damit es auf jedem Geraet ohne
+   eigenes Menue funktioniert, nur an die dunkle Gestaltung angeglichen. */
+.langSelect {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  cursor: pointer;
 }
 
 .card {
@@ -174,6 +195,21 @@ dialog .actions button { padding: 10px 18px; }
   border-left: 3px solid var(--accent);
   padding: 2px 0 2px 12px;
   margin: 0 0 12px;
+}
+
+/* Die Satzpause im Einstellungen-Dialog - dieselbe Darstellung wie RestCard
+   in der App: eine grosse m:ss-Zahl ueber dem Schieberegler statt einer
+   nackten Sekundenzahl, die fuer sich genommen nichts erklaert. */
+.restValue {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--accent);
+  text-align: center;
+  margin: 4px 0;
+}
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
 }
 
 /*

@@ -12,43 +12,46 @@
 <!-- Kurz sichtbar, bis der erste Anmeldezustand feststeht - sonst blitzt hier
      immer kurz "Anmelden" auf, auch wenn man laengst angemeldet ist. -->
 <div class="card stack" id="authLoading">
-  <p class="muted">Wird geprüft …</p>
+  <p class="muted" data-i18n="authChecking">Wird geprüft …</p>
 </div>
 
 <div class="card stack hidden" id="unconfigured">
-  <h2>Noch nicht eingerichtet</h2>
-  <p class="muted">
-    In <code>web/firebase-config.js</code> fehlen die Zugangsdaten der Web-App.
-    Sie stehen in der Firebase-Konsole unter Projekteinstellungen → Meine Apps
-    → Web-App hinzufügen.
+  <h2 data-i18n="unconfiguredTitle">Noch nicht eingerichtet</h2>
+  <p class="muted" data-i18n="unconfiguredBody">
+    In web/firebase-config.js fehlen die Zugangsdaten der Web-App. Sie stehen
+    in der Firebase-Konsole unter Projekteinstellungen → Meine Apps →
+    Web-App hinzufügen.
   </p>
 </div>
 
 <main class="hidden" id="signInScreen" style="max-width:480px;margin:10vh auto;padding:16px">
+  <div class="row" style="justify-content:flex-end;margin-bottom:8px">
+    <select id="langSelect" class="langSelect" aria-label="Sprache"></select>
+  </div>
   <div class="card stack" id="signIn">
-    <h2>Anmelden</h2>
-    <p class="muted">
+    <h2 data-i18n="signInTitle">Anmelden</h2>
+    <p class="muted" data-i18n="signInBodyAccount">
       Nimm dasselbe Google-Konto wie in der App – dann siehst du hier dieselben
       Gruppen und Freunde. Verknüpfe dein Konto vorher in der App unter
       Einstellungen → Konto, sonst legst du hier ein zweites an.
     </p>
-    <p class="muted">
+    <p class="muted" data-i18n="signInBodyGuest">
       Oder trainiere ohne Konto: Level, Verlauf und Satzpause funktionieren
       dann direkt in diesem Browser. Nur Gruppen und Freunde brauchen später
       eine Anmeldung.
     </p>
-    <button class="wide" id="google">Mit Google anmelden</button>
-    <button class="ghost wide" id="guestBtn">Als Gast fortfahren</button>
+    <button class="wide" id="google" data-i18n="signInGoogle">Mit Google anmelden</button>
+    <button class="ghost wide" id="guestBtn" data-i18n="signInGuest">Als Gast fortfahren</button>
     <p class="muted error hidden" id="signInError"></p>
   </div>
-  <p class="muted"><a href="../">Zur Startseite</a></p>
+  <a class="button ghost wide" id="backHome" href="../" data-i18n="signInBackHome">Zur Startseite</a>
 </main>
 
 <div id="shell" class="hidden">
   <header class="topbar">
-    <button class="iconbtn hidden" id="backBtn">Zurück</button>
+    <button class="iconbtn hidden" id="backBtn" data-i18n="backBtn">Zurück</button>
     <h1 id="topTitle">Training</h1>
-    <button class="iconbtn" id="accountBtn" aria-label="Konto">Konto</button>
+    <button class="iconbtn" id="accountBtn" data-i18n="settingsBtn" data-i18n-attr="aria-label">Einstellungen</button>
   </header>
 
   <main class="tabmain">
@@ -56,7 +59,7 @@
       <div class="card stack" id="trainingCard">
         <div class="row">
           <div class="grow">
-            <p class="muted" style="margin:0">Dein Level</p>
+            <p class="muted" style="margin:0" data-i18n="yourLevel">Dein Level</p>
             <h2 id="levelTitle" style="margin:0">…</h2>
           </div>
           <button class="chip" id="levelDown">−</button>
@@ -65,61 +68,61 @@
         <div class="setpills" id="setPills"></div>
         <p class="muted" id="levelSummary"></p>
         <p class="muted hint hidden" id="levelHint"></p>
-        <button class="wide" id="startWorkout">Training starten</button>
-        <button class="ghost wide" id="allLevels">Alle Level ansehen</button>
+        <button class="wide" id="startWorkout" data-i18n="startWorkout">Training starten</button>
+        <button class="ghost wide" id="allLevels" data-i18n="allLevelsBtn">Alle Level ansehen</button>
       </div>
 
       <div class="card stack">
-        <h2>Deine Zahlen</h2>
+        <h2 data-i18n="yourNumbers">Deine Zahlen</h2>
         <div class="tiles" id="quickTiles"></div>
         <p class="muted" id="testLine"></p>
         <p class="muted" id="goalLine"></p>
         <div class="bar"><div id="goalBar" style="width:0%"></div></div>
-        <button class="ghost wide" id="toHistory">Ganzen Verlauf ansehen</button>
+        <button class="ghost wide" id="toHistory" data-i18n="toHistory">Ganzen Verlauf ansehen</button>
       </div>
     </section>
 
     <section class="tabpanel hidden" id="tab-friends">
       <div class="card stack hidden" id="friendsGate">
-        <h2>Erst das Konto verbinden</h2>
-        <p class="muted">
+        <h2 data-i18n="connectFirstTitle">Erst das Konto verbinden</h2>
+        <p class="muted" data-i18n="connectFirstBody">
           Freunde und Gruppen brauchen ein Konto. Solange du keines
           verbindest, bleibt dein Training vollständig auf diesem Gerät.
         </p>
-        <button class="wide" id="friendsGateSignIn">Anmelden</button>
+        <button class="wide" id="friendsGateSignIn" data-i18n="connectFirstAction">Anmelden</button>
       </div>
       <div class="card stack" id="friendsPanel">
         <div class="row">
-          <h2 class="grow">Freunde</h2>
-          <button class="chip" id="redeem">Einladung einlösen</button>
+          <h2 class="grow" data-i18n="tabFriends">Freunde</h2>
+          <button class="chip" id="redeem" data-i18n="redeemBtn">Einladung einlösen</button>
         </div>
-        <div id="friends"><p class="muted">Wird geladen …</p></div>
-        <button class="wide" id="inviteFriend">Freund einladen</button>
+        <div id="friends"><p class="muted" data-i18n="loading">Wird geladen …</p></div>
+        <button class="wide" id="inviteFriend" data-i18n="inviteFriendBtn">Freund einladen</button>
       </div>
     </section>
 
     <section class="tabpanel hidden" id="tab-groups">
       <div class="card stack hidden" id="groupsGate">
-        <h2>Erst das Konto verbinden</h2>
-        <p class="muted">
+        <h2 data-i18n="connectFirstTitle">Erst das Konto verbinden</h2>
+        <p class="muted" data-i18n="connectFirstBody">
           Freunde und Gruppen brauchen ein Konto. Solange du keines
           verbindest, bleibt dein Training vollständig auf diesem Gerät.
         </p>
-        <button class="wide" id="groupsGateSignIn">Anmelden</button>
+        <button class="wide" id="groupsGateSignIn" data-i18n="connectFirstAction">Anmelden</button>
       </div>
       <div class="card stack" id="groupsPanel">
         <div class="row">
-          <h2 class="grow">Gruppen</h2>
-          <button class="chip" id="joinGroup">Beitreten</button>
+          <h2 class="grow" data-i18n="tabGroups">Gruppen</h2>
+          <button class="chip" id="joinGroup" data-i18n="joinGroupBtn">Beitreten</button>
         </div>
-        <div id="groups"><p class="muted">Wird geladen …</p></div>
-        <button class="wide" id="newGroup">Neue Gruppe</button>
+        <div id="groups"><p class="muted" data-i18n="loading">Wird geladen …</p></div>
+        <button class="wide" id="newGroup" data-i18n="newGroupBtn">Neue Gruppe</button>
       </div>
     </section>
 
     <section class="tabpanel hidden" id="tab-history">
       <div class="card stack">
-        <h2>Verlauf</h2>
+        <h2 data-i18n="tabHistory">Verlauf</h2>
         <div class="tiles" id="fullTiles"></div>
         <div id="fullHistory"></div>
       </div>
@@ -129,10 +132,10 @@
   </main>
 
   <nav class="bottomnav">
-    <button class="navitem" data-tab="training" aria-pressed="true">Training</button>
-    <button class="navitem" data-tab="friends">Freunde</button>
-    <button class="navitem" data-tab="groups">Gruppen</button>
-    <button class="navitem" data-tab="history">Verlauf</button>
+    <button class="navitem" data-tab="training" data-i18n="tabTraining" aria-pressed="true">Training</button>
+    <button class="navitem" data-tab="friends" data-i18n="tabFriends">Freunde</button>
+    <button class="navitem" data-tab="groups" data-i18n="tabGroups">Gruppen</button>
+    <button class="navitem" data-tab="history" data-i18n="tabHistory">Verlauf</button>
   </nav>
 </div>
 
@@ -150,12 +153,15 @@
   <p class="setline" id="wHint"></p>
   <p class="setline" id="wNote"></p>
   <div class="row wadjust hidden" id="wAdjust">
-    <button class="chip" id="wMinus">−1</button>
-    <button class="chip" id="wPlus">+1</button>
+    <button class="chip" id="wMinus" data-i18n="workoutMinus">−1</button>
+    <button class="chip" id="wPlus" data-i18n="workoutPlus">+1</button>
+  </div>
+  <div class="row wadjust hidden" id="wRestAdjust">
+    <button class="chip" id="wAddRest" data-i18n="settingsRestAdd">+30 s</button>
   </div>
   <div class="controls">
-    <button class="ghost" id="wAbort">Abbrechen</button>
-    <button class="ghost hidden" id="wStop">Hier beenden</button>
+    <button class="ghost" id="wAbort" data-i18n="workoutAbort">Abbrechen</button>
+    <button class="ghost hidden" id="wStop" data-i18n="workoutStop">Hier beenden</button>
     <button id="wNext">Weiter</button>
   </div>
 </div>
