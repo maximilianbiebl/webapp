@@ -14,6 +14,13 @@
 
 const STORAGE_KEY = "liegestuetzen.language";
 
+/** Die drei Sprachoptionen, an einer Stelle - jede Seite baut ihre Chips daraus. */
+export const LANGUAGE_OPTIONS = [
+  ["system", "languageSystem"],
+  ["de", "languageDe"],
+  ["en", "languageEn"],
+];
+
 const STRINGS = {
   de: {
     // Start- und Anmeldeseite

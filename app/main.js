@@ -22,7 +22,7 @@ import {
   loadGuestProfile, saveGuestProfile, loadGuestSessions, saveGuestSessions,
   hasGuestData, clearGuestData,
 } from "./local.js";
-import { t, getLanguage, setLanguage } from "../strings.js";
+import { t, getLanguage, setLanguage, LANGUAGE_OPTIONS } from "../strings.js";
 
 const $ = (id) => document.getElementById(id);
 const show = (el, visible) => el.classList.toggle("hidden", !visible);
@@ -36,14 +36,17 @@ function formatDuration(seconds) {
   return `${minutes}:${String(remaining).padStart(2, "0")}`;
 }
 
-const LANGUAGE_OPTIONS = [
-  ["system", "languageSystem"],
-  ["de", "languageDe"],
-  ["en", "languageEn"],
-];
+/** Baut die Sprach-Chips - dieselbe Art Regler wie bei Zeitraum und Sortierung. */
+function languageChipsHtml() {
+  const current = getLanguage();
+  return LANGUAGE_OPTIONS.map(([value, key]) =>
+    `<button type="button" class="chip" data-lang="${value}" aria-pressed="${value === current}">${t(key)}</button>`,
+  ).join("");
+}
 
-function languageOptionsHtml() {
-  return LANGUAGE_OPTIONS.map(([value, key]) => `<option value="${value}">${t(key)}</option>`).join("");
+function wireLanguageChips(container) {
+  container.querySelectorAll("[data-lang]").forEach((chip) =>
+    chip.addEventListener("click", () => setLanguage(chip.dataset.lang)));
 }
 
 /**
@@ -59,14 +62,13 @@ function applyTranslations() {
     el.textContent = text;
     if (el.dataset.i18nAttr) el.setAttribute(el.dataset.i18nAttr, text);
   });
-  const select = $("langSelect");
-  if (select) {
-    select.innerHTML = languageOptionsHtml();
-    select.value = getLanguage();
+  const chips = $("langChips");
+  if (chips) {
+    chips.innerHTML = languageChipsHtml();
+    wireLanguageChips(chips);
   }
 }
 
-$("langSelect")?.addEventListener("change", (event) => setLanguage(event.target.value));
 window.addEventListener("liegestuetzen:language", () => {
   applyTranslations();
   if (me || guestMode) {
@@ -937,13 +939,19 @@ function clampRestSeconds(seconds) {
   return Math.min(Math.max(rounded, 30), 240);
 }
 
+/** Wo der Griff auf der Spur sitzt, als Prozentsatz zwischen 30 und 240 Sekunden. */
+function restFillPercent(seconds) {
+  return ((seconds - 30) / (240 - 30)) * 100;
+}
+
 /** Baut Satzpause-Anzeige und -Regler, wie RestCard in der App: eine grosse m:ss-Zahl ueber dem Schieberegler. */
 function restSliderMarkup(presetSeconds) {
   const seconds = presetSeconds ?? (profile.restSeconds || 90);
   return `
     <p class="muted" style="margin-top:12px">${t("settingsRestTitle")}</p>
     <p class="restValue" id="restValue">${formatDuration(seconds)}</p>
-    <input type="range" id="restSlider" min="30" max="240" step="30" value="${seconds}">`;
+    <input type="range" id="restSlider" min="30" max="240" step="30" value="${seconds}"
+      style="--fill:${restFillPercent(seconds)}%">`;
 }
 
 /** Live-Anzeige beim Ziehen; gespeichert wird erst beim Klick auf "Speichern". */
@@ -951,7 +959,9 @@ function wireRestSlider(dialog) {
   const slider = dialog.querySelector("#restSlider");
   const value = dialog.querySelector("#restValue");
   slider.addEventListener("input", () => {
-    value.textContent = formatDuration(clampRestSeconds(Number(slider.value)));
+    const seconds = clampRestSeconds(Number(slider.value));
+    value.textContent = formatDuration(seconds);
+    slider.style.setProperty("--fill", `${restFillPercent(seconds)}%`);
   });
   return () => clampRestSeconds(Number(slider.value));
 }
@@ -959,13 +969,11 @@ function wireRestSlider(dialog) {
 function languageSelectMarkup() {
   return `
     <p class="muted" style="margin-top:12px">${t("languageLabel")}</p>
-    <select id="langField">${languageOptionsHtml()}</select>`;
+    <div class="chips" id="langFieldChips">${languageChipsHtml()}</div>`;
 }
 
 function wireLanguageSelect(dialog) {
-  const select = dialog.querySelector("#langField");
-  select.value = getLanguage();
-  select.addEventListener("change", () => setLanguage(select.value));
+  wireLanguageChips(dialog.querySelector("#langFieldChips"));
 }
 
 /**

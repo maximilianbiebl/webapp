@@ -49,6 +49,7 @@ header.site {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
 }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
@@ -57,18 +58,19 @@ header.site {
   background: var(--accent);
 }
 
-/* Die Sprachwahl - ein natives <select>, damit es auf jedem Geraet ohne
-   eigenes Menue funktioniert, nur an die dunkle Gestaltung angeglichen. */
-.langSelect {
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--bg);
-  color: var(--ink);
-  cursor: pointer;
+/*
+ * Die Sprachwahl - dieselben Chips wie bei Zeitraum und Sortierung, keine
+ * eigene Regler-Art. Ein natives <select> sah neben den sonst durchgehend
+ * eigens gestalteten Bedienelementen fremd aus, und "System" allein, ohne
+ * ein Wort daneben, sagte niemandem, wofuer die Auswahl ueberhaupt war.
+ */
+.langPicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
+.langPicker .muted { font-size: 0.8rem; white-space: nowrap; }
 
 .card {
   background: var(--card);
@@ -199,17 +201,65 @@ dialog .actions button { padding: 10px 18px; }
 
 /* Die Satzpause im Einstellungen-Dialog - dieselbe Darstellung wie RestCard
    in der App: eine grosse m:ss-Zahl ueber dem Schieberegler statt einer
-   nackten Sekundenzahl, die fuer sich genommen nichts erklaert. */
+   nackten Sekundenzahl, die fuer sich genommen nichts erklaert. Keine
+   Fettschrift - headlineMedium in der App ist regulaer, die Groesse und die
+   Akzentfarbe geben der Zahl schon genug Gewicht. */
 .restValue {
-  font-size: 1.8rem;
-  font-weight: 800;
+  font-size: 2rem;
+  font-weight: 500;
   color: var(--accent);
   text-align: center;
   margin: 4px 0;
 }
+
+/*
+ * Ein Regler, der wie Slider in der App aussieht: eine duenne abgerundete
+ * Spur, links davon in der Akzentfarbe gefuellt, ein runder Griff obendrauf.
+ * Das native <input type="range"> gibt das nicht von sich aus her - --fill
+ * wird per JS auf den aktuellen Wert gesetzt und faerbt die Spur bis dorthin.
+ */
 input[type="range"] {
+  --fill: 50%;
   width: 100%;
-  accent-color: var(--accent);
+  height: 20px;
+  margin: 10px 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--accent) var(--fill), rgba(128, 128, 128, 0.3) var(--fill));
+}
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(128, 128, 128, 0.3);
+}
+input[type="range"]::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px 0 0 999px;
+  background: var(--accent);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-top: -8px;
+  cursor: pointer;
+  border: none;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
 }
 
 /*

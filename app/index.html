@@ -25,8 +25,9 @@
 </div>
 
 <main class="hidden" id="signInScreen" style="max-width:480px;margin:10vh auto;padding:16px">
-  <div class="row" style="justify-content:flex-end;margin-bottom:8px">
-    <select id="langSelect" class="langSelect" aria-label="Sprache"></select>
+  <div class="langPicker" style="justify-content:flex-end;margin-bottom:12px">
+    <span class="muted" data-i18n="languageLabel">Sprache</span>
+    <div class="chips" id="langChips"></div>
   </div>
   <div class="card stack" id="signIn">
     <h2 data-i18n="signInTitle">Anmelden</h2>
