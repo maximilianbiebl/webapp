@@ -32,7 +32,13 @@
       Gruppen und Freunde. Verknüpfe dein Konto vorher in der App unter
       Einstellungen → Konto, sonst legst du hier ein zweites an.
     </p>
+    <p class="muted">
+      Oder trainiere ohne Konto: Level, Verlauf und Satzpause funktionieren
+      dann direkt in diesem Browser. Nur Gruppen und Freunde brauchen später
+      eine Anmeldung.
+    </p>
     <button class="wide" id="google">Mit Google anmelden</button>
+    <button class="ghost wide" id="guestBtn">Als Gast fortfahren</button>
     <p class="muted error hidden" id="signInError"></p>
   </div>
   <p class="muted"><a href="../">Zur Startseite</a></p>
@@ -74,7 +80,15 @@
     </section>
 
     <section class="tabpanel hidden" id="tab-friends">
-      <div class="card stack">
+      <div class="card stack hidden" id="friendsGate">
+        <h2>Erst das Konto verbinden</h2>
+        <p class="muted">
+          Freunde und Gruppen brauchen ein Konto. Solange du keines
+          verbindest, bleibt dein Training vollständig auf diesem Gerät.
+        </p>
+        <button class="wide" id="friendsGateSignIn">Anmelden</button>
+      </div>
+      <div class="card stack" id="friendsPanel">
         <div class="row">
           <h2 class="grow">Freunde</h2>
           <button class="chip" id="redeem">Einladung einlösen</button>
@@ -85,7 +99,15 @@
     </section>
 
     <section class="tabpanel hidden" id="tab-groups">
-      <div class="card stack">
+      <div class="card stack hidden" id="groupsGate">
+        <h2>Erst das Konto verbinden</h2>
+        <p class="muted">
+          Freunde und Gruppen brauchen ein Konto. Solange du keines
+          verbindest, bleibt dein Training vollständig auf diesem Gerät.
+        </p>
+        <button class="wide" id="groupsGateSignIn">Anmelden</button>
+      </div>
+      <div class="card stack" id="groupsPanel">
         <div class="row">
           <h2 class="grow">Gruppen</h2>
           <button class="chip" id="joinGroup">Beitreten</button>

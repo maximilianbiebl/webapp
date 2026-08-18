@@ -13,8 +13,7 @@
 <main>
   <h1>Vom ersten Satz bis zu hundert am Stück</h1>
   <p class="lead">
-    Ein Trainingsplan über 40 Level – auf dem Handy oder im Browser. Wenn du
-    willst, mit Gruppen und einem Vergleich mit Freunden.
+    Ein Trainingsplan über 40 Level – auf dem Handy oder im Browser.
   </p>
 
   <div class="card stack">
@@ -31,43 +30,16 @@
   <div class="card stack">
     <h2>Im Browser</h2>
     <p class="muted">
-      Trainieren, Level wechseln, Verlauf – alles auch ohne App. Meldest du
+      Trainieren, Level wechseln, Verlauf – auch ganz ohne Konto. Meldest du
       dich mit demselben Google-Konto an wie auf dem Handy, siehst du dort
       dieselben Gruppen und Freunde.
     </p>
     <a class="button ghost wide" href="app/">Web-Version öffnen</a>
   </div>
 
-  <div class="card stack">
-    <h2>Eine Einladung einlösen</h2>
-    <p class="muted">
-      Hast du einen Code oder Link bekommen, gib ihn hier ein. Gruppen-IDs und
-      Freundschaftscodes sind beide 22 Zeichen lang.
-    </p>
-    <input type="text" id="code" placeholder="Code oder Link" autocomplete="off">
-    <button class="wide" id="go">Einlösen</button>
-    <p class="muted error hidden" id="err">Das sieht nicht nach einem gültigen Code aus.</p>
-  </div>
-
   <p class="muted">
     Quelltext auf <a href="https://github.com/maximilianbiebl/Liegestutzen">GitHub</a>.
   </p>
 </main>
-<script type="module">
-  import { parseId } from "./shared.js";
-  const field = document.getElementById("code");
-  const error = document.getElementById("err");
-  // Direkt in die Web-Version. Wer den Code gerade selbst eingetippt hat,
-  // braucht keine Seite, die ihm den Code zeigt – er will, dass etwas passiert.
-  // Ob Gruppe oder Freundschaft, findet die Web-Version selbst heraus.
-  document.getElementById("go").addEventListener("click", () => {
-    const id = parseId(field.value);
-    error.classList.toggle("hidden", Boolean(id));
-    if (id) window.location.href = `app/?code=${id}`;
-  });
-  field.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") document.getElementById("go").click();
-  });
-</script>
 </body>
 </html>

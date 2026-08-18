@@ -18,6 +18,10 @@ import { ask, say, askForText } from "./dialogs.js";
 import { LEVEL_COUNT, levelReps, levelTotal, goalProgress, suggestLevel } from "../levels.js";
 import { statistics, totalReps, bestSet } from "../stats.js";
 import { runWorkout } from "./training.js";
+import {
+  loadGuestProfile, saveGuestProfile, loadGuestSessions, saveGuestSessions,
+  hasGuestData, clearGuestData,
+} from "./local.js";
 
 const $ = (id) => document.getElementById(id);
 const show = (el, visible) => el.classList.toggle("hidden", !visible);
@@ -30,8 +34,15 @@ let me = null;
 let displayName = "";
 let range = 7;
 let sort = "reps";
-/** Das eigene Programm und der eigene Verlauf, so wie sie in der Cloud liegen. */
-let profile = { level: 1, goalReps: 100, updatedAt: 0 };
+/**
+ * Ohne Konto weiterkommen, genau wie die App es standardmaessig tut: Level
+ * waehlen, trainieren, Satzpause einstellen - nur eben ohne dass ein einziges
+ * Byte den Browser verlaesst. Freunde und Gruppen bleiben dabei gesperrt, denn
+ * die brauchen zwangslaeufig ein Konto.
+ */
+let guestMode = false;
+/** Das eigene Programm und der eigene Verlauf, so wie sie in der Cloud liegen (oder lokal, als Gast). */
+let profile = { level: 1, goalReps: 100, restSeconds: 90, updatedAt: 0 };
 let sessions = [];
 
 /**
@@ -72,15 +83,30 @@ if (!isConfigured) {
   waitForAuth().then(() => {
     onAuthStateChanged(fb.auth, (user) => {
       me = user;
+      if (user) guestMode = false;
       show($("authLoading"), false);
-      show($("signInScreen"), !user);
-      show($("shell"), Boolean(user));
+      show($("signInScreen"), !user && !guestMode);
+      show($("shell"), Boolean(user) || guestMode);
       if (user) start();
     });
   });
 }
 
-$("google").addEventListener("click", async () => {
+$("google").addEventListener("click", () => signInWithGoogle());
+
+/**
+ * Weiter ohne Konto - dieselbe Voreinstellung wie beim ersten Start der App.
+ * Kein einziger Firebase-Aufruf hier: Wer nur trainiert, soll nie am Netzwerk
+ * haengen.
+ */
+$("guestBtn").addEventListener("click", () => {
+  guestMode = true;
+  show($("signInScreen"), false);
+  show($("shell"), true);
+  start();
+});
+
+async function signInWithGoogle() {
   try {
     await signInWithPopup(fb.auth, new GoogleAuthProvider());
   } catch (error) {
@@ -88,7 +114,7 @@ $("google").addEventListener("click", async () => {
     box.textContent = `Anmeldung fehlgeschlagen: ${error.code || error.message}`;
     show(box, true);
   }
-});
+}
 
 /* --------------------------------------------------------------- Navigation */
 
@@ -156,24 +182,27 @@ async function readMyProfile() {
 const privateProfileRef = () => doc(fb.db, "users", me.uid, "private", "profile");
 const sessionsRef = () => collection(fb.db, "users", me.uid, "sessions");
 
+function toProfile(data) {
+  return {
+    level: data.level || 1,
+    goalReps: data.goalReps || 100,
+    levelStartedAt: data.levelStartedAt || 0,
+    hasChosenLevel: data.hasChosenLevel || false,
+    lastTestResult: data.lastTestResult || 0,
+    restSeconds: data.restSeconds || 90,
+    restSecondsUpdatedAt: data.restSecondsUpdatedAt || 0,
+    updatedAt: data.updatedAt || 0,
+  };
+}
+
+const EMPTY_PROFILE = toProfile({});
+
 async function readOwnTraining() {
   const [profileDoc, sessionDocs] = await Promise.all([
     getDoc(privateProfileRef()),
     getDocs(sessionsRef()),
   ]);
-  profile = profileDoc.exists()
-    ? {
-        level: profileDoc.data().level || 1,
-        goalReps: profileDoc.data().goalReps || 100,
-        levelStartedAt: profileDoc.data().levelStartedAt || 0,
-        hasChosenLevel: profileDoc.data().hasChosenLevel || false,
-        lastTestResult: profileDoc.data().lastTestResult || 0,
-        updatedAt: profileDoc.data().updatedAt || 0,
-      }
-    : {
-        level: 1, goalReps: 100, levelStartedAt: 0,
-        hasChosenLevel: false, lastTestResult: 0, updatedAt: 0,
-      };
+  profile = profileDoc.exists() ? toProfile(profileDoc.data()) : { ...EMPTY_PROFILE };
   sessions = sessionDocs.docs.map((d) => ({
     id: d.id,
     timestampMillis: d.data().timestamp || 0,
@@ -182,6 +211,12 @@ async function readOwnTraining() {
     actualReps: d.data().actualReps || [],
     durationSeconds: d.data().durationSeconds || 0,
   }));
+}
+
+/** Dasselbe wie readOwnTraining(), nur aus diesem Browser statt aus der Cloud. */
+function readOwnTrainingGuest() {
+  profile = loadGuestProfile();
+  sessions = loadGuestSessions();
 }
 
 /**
@@ -196,6 +231,12 @@ async function readOwnTraining() {
  * geaendert haben - die App merkt sich das genauso.
  */
 async function writeProfile() {
+  if (guestMode) {
+    profile.updatedAt = Date.now();
+    profile.hasChosenLevel = true;
+    saveGuestProfile(profile);
+    return;
+  }
   profile.updatedAt = Date.now();
   await setDoc(privateProfileRef(), {
     level: profile.level,
@@ -207,11 +248,37 @@ async function writeProfile() {
 }
 
 /**
+ * Die Satzpause, getrennt von writeProfile() geschrieben.
+ *
+ * Eigener Zeitstempel `restSecondsUpdatedAt`, genau wie
+ * `restSecondsUpdatedAtMillis` in AppSettings.kt - ohne ihn liesse sich
+ * zwischen zwei Geraeten nicht entscheiden, welche Einstellung neuer ist.
+ */
+async function writeRestSeconds(seconds) {
+  profile.restSeconds = seconds;
+  profile.restSecondsUpdatedAt = Date.now();
+  if (guestMode) {
+    saveGuestProfile(profile);
+    return;
+  }
+  await setDoc(privateProfileRef(), {
+    restSeconds: profile.restSeconds,
+    restSecondsUpdatedAt: profile.restSecondsUpdatedAt,
+  }, { merge: true });
+}
+
+/**
  * Legt eine fertige Einheit ab - im eigenen Bereich und in allem, was geteilt
  * wird. Dieselben drei Orte wie in der App, aus demselben Grund: Eine Regel
  * soll nie herausfinden muessen, ob zwei Leute etwas gemeinsam haben.
  */
 async function storeSession(workout) {
+  if (guestMode) {
+    // `sessions` traegt den Eintrag schon - der Aufrufer haengt ihn vor dem
+    // Aufruf an, damit die Zahlen sofort auf dem Bildschirm stehen.
+    saveGuestSessions(sessions);
+    return;
+  }
   await setDoc(doc(sessionsRef(), workout.id), {
     timestamp: workout.timestampMillis,
     level: workout.level,
@@ -240,13 +307,64 @@ async function storeSession(workout) {
 }
 
 /**
+ * Nimmt mit, was als Gast entstanden ist - einmalig, direkt nach der ersten
+ * Anmeldung. Programm: ein leeres Kontoprofil uebernimmt das Gast-Programm,
+ * ein echtes gewinnt und behaelt seins - dieselbe Regel wie ProfileMerge.kt
+ * fuer zwei Geraete. Verlauf: die Vereinigung, nichts wird verworfen.
+ */
+async function mergeGuestDataIntoCloud() {
+  if (!hasGuestData()) return;
+  const guestProfile = loadGuestProfile();
+  const guestSessions = loadGuestSessions();
+
+  const cloudDoc = await getDoc(privateProfileRef());
+  const cloudHasProgramme = cloudDoc.exists() && cloudDoc.data().hasChosenLevel;
+  if (!cloudHasProgramme && guestProfile.hasChosenLevel) {
+    await setDoc(privateProfileRef(), {
+      level: guestProfile.level,
+      levelStartedAt: guestProfile.levelStartedAt || 0,
+      goalReps: guestProfile.goalReps,
+      hasChosenLevel: true,
+      updatedAt: Date.now(),
+    }, { merge: true });
+  }
+
+  const cloudRestUpdatedAt = cloudDoc.exists() ? (cloudDoc.data().restSecondsUpdatedAt || 0) : 0;
+  if ((guestProfile.restSecondsUpdatedAt || 0) > cloudRestUpdatedAt) {
+    await setDoc(privateProfileRef(), {
+      restSeconds: guestProfile.restSeconds,
+      restSecondsUpdatedAt: guestProfile.restSecondsUpdatedAt || Date.now(),
+    }, { merge: true });
+  }
+
+  if (guestSessions.length) {
+    const existing = await getDocs(sessionsRef());
+    const known = new Set(existing.docs.map((d) => d.id));
+    const newOnes = guestSessions.filter((s) => !known.has(s.id));
+    await Promise.all(newOnes.map((workout) => setDoc(doc(sessionsRef(), workout.id), {
+      timestamp: workout.timestampMillis,
+      level: workout.level,
+      plannedReps: workout.plannedReps,
+      actualReps: workout.actualReps,
+      durationSeconds: workout.durationSeconds,
+    })));
+  }
+
+  clearGuestData();
+}
+
+/**
  * Loescht eine Einheit ueberall wieder - lokal reicht nicht, sonst kaeme sie
  * beim naechsten Abgleich mit der App zurueck und die Bestenliste behielte
  * einen Eintrag, den man selbst weggeworfen hat.
  */
 async function deleteSession(id) {
-  await deleteDoc(doc(sessionsRef(), id));
   sessions = sessions.filter((s) => s.id !== id);
+  if (guestMode) {
+    saveGuestSessions(sessions);
+    return;
+  }
+  await deleteDoc(doc(sessionsRef(), id));
   const [groups, friendships] = await Promise.all([readGroups(), readFriendships()]);
   await Promise.all([
     ...groups.map((g) => deleteDoc(doc(fb.db, "groups", g.id, "entries", `${me.uid}_${id}`))),
@@ -298,7 +416,26 @@ async function readFriendships() {
 /* --------------------------------------------------------------- Ansicht */
 
 async function start() {
+  show($("friendsGate"), guestMode);
+  show($("friendsPanel"), !guestMode);
+  show($("groupsGate"), guestMode);
+  show($("groupsPanel"), !guestMode);
+  $("accountBtn").textContent = guestMode ? "Einstellungen" : "Konto";
+
+  if (guestMode) {
+    readOwnTrainingGuest();
+    renderTraining();
+    renderQuickStats();
+    renderFullHistory();
+    render();
+    return;
+  }
+
   displayName = await readMyProfile();
+  // Falls dieser Browser schon als Gast trainiert hat, kommt das jetzt mit ins
+  // Konto - unabhaengig davon, ob die Anmeldung gerade eben aus dem
+  // Gastmodus heraus geschah oder erst nach einem Neustart der Seite.
+  await mergeGuestDataIntoCloud().catch(() => {});
 
   await readOwnTraining().catch(() => {});
   renderTraining();
@@ -316,22 +453,19 @@ async function start() {
   await handleDeepLinks();
 }
 
+$("friendsGateSignIn").addEventListener("click", () => leaveGuestModeForSignIn());
+$("groupsGateSignIn").addEventListener("click", () => leaveGuestModeForSignIn());
+
+/** Bringt zum Anmeldebildschirm zurueck, ohne das bisherige Gast-Training zu verlieren. */
+function leaveGuestModeForSignIn() {
+  show($("shell"), false);
+  show($("signInScreen"), true);
+}
+
 /** Haelt Level, Ziel und Verlauf synchron mit dem, was gerade in der Cloud steht. */
 function watchOwnTraining() {
   onSnapshot(privateProfileRef(), (snapshot) => {
-    profile = snapshot.exists()
-      ? {
-          level: snapshot.data().level || 1,
-          goalReps: snapshot.data().goalReps || 100,
-          levelStartedAt: snapshot.data().levelStartedAt || 0,
-          hasChosenLevel: snapshot.data().hasChosenLevel || false,
-          lastTestResult: snapshot.data().lastTestResult || 0,
-          updatedAt: snapshot.data().updatedAt || 0,
-        }
-      : {
-          level: 1, goalReps: 100, levelStartedAt: 0,
-          hasChosenLevel: false, lastTestResult: 0, updatedAt: 0,
-        };
+    profile = snapshot.exists() ? toProfile(snapshot.data()) : { ...EMPTY_PROFILE };
     renderTraining();
     renderQuickStats();
   }, () => {});
@@ -437,7 +571,7 @@ function renderTraining() {
   $("setPills").innerHTML = reps.map((n) => `<span>${n}</span>`).join("");
   $("levelSummary").textContent =
     `${levelTotal(profile.level)} Wiederholungen in ${reps.length} Sätzen, ` +
-    `90 Sekunden Pause dazwischen.`;
+    `${profile.restSeconds || 90} Sekunden Pause dazwischen.`;
   $("levelDown").disabled = profile.level <= 1;
   $("levelUp").disabled = profile.level >= LEVEL_COUNT;
 
@@ -613,7 +747,7 @@ async function setLevel(wanted) {
 }
 
 $("startWorkout").addEventListener("click", async () => {
-  const workout = await runWorkout(profile.level);
+  const workout = await runWorkout(profile.level, profile.restSeconds || 90);
   if (!workout) return;
   sessions = [...sessions, workout];
   renderQuickStats();
@@ -750,11 +884,17 @@ async function drawFriendDetail(pairId) {
  * laufen.
  */
 $("accountBtn").addEventListener("click", () => {
+  if (guestMode) {
+    openGuestSettingsDialog();
+    return;
+  }
   const dialog = document.createElement("dialog");
   dialog.innerHTML = `
     <h2>Konto</h2>
     <p class="muted">${escape(me.email || "Anonymes Konto")}</p>
     <input type="text" id="nameField" placeholder="Anzeigename" autocomplete="off" value="${escape(displayName)}">
+    <p class="muted" style="margin-top:12px">Satzpause</p>
+    <input type="text" inputmode="numeric" id="restField" placeholder="Sekunden" value="${profile.restSeconds || 90}">
     <div class="actions">
       <button class="ghost" id="signOutBtn">Abmelden</button>
       <button id="saveNameBtn">Speichern</button>
@@ -764,9 +904,13 @@ $("accountBtn").addEventListener("click", () => {
 
   dialog.querySelector("#saveNameBtn").addEventListener("click", async () => {
     const name = dialog.querySelector("#nameField").value.trim().slice(0, 40);
+    const rest = clampRestSeconds(dialog.querySelector("#restField").value);
     dialog.close();
-    if (!name || name === displayName) return;
-    await saveDisplayName(name);
+    if (name && name !== displayName) await saveDisplayName(name);
+    if (rest !== (profile.restSeconds || 90)) {
+      await writeRestSeconds(rest);
+      renderTraining();
+    }
   });
   dialog.querySelector("#signOutBtn").addEventListener("click", async () => {
     dialog.close();
@@ -781,6 +925,51 @@ $("accountBtn").addEventListener("click", () => {
 
   dialog.showModal();
 });
+
+/** 5 bis 300 Sekunden - dieselbe Spanne wie RestCard in der App. */
+function clampRestSeconds(entered) {
+  const parsed = Math.round(Number(entered));
+  if (!Number.isFinite(parsed)) return profile.restSeconds || 90;
+  return Math.min(Math.max(parsed, 5), 300);
+}
+
+/**
+ * Die Einstellungen fuer Gaeste: nur die Satzpause, dazu ein Weg zum Konto.
+ * Freunde, Gruppen und der Anzeigename brauchen zwangslaeufig eine Anmeldung.
+ */
+function openGuestSettingsDialog() {
+  const dialog = document.createElement("dialog");
+  dialog.innerHTML = `
+    <h2>Einstellungen</h2>
+    <p class="muted">Ohne Konto bleibt dein Training auf diesem Gerät.</p>
+    <p class="muted" style="margin-top:12px">Satzpause</p>
+    <input type="text" inputmode="numeric" id="restField" placeholder="Sekunden" value="${profile.restSeconds || 90}">
+    <div class="actions">
+      <button class="ghost" id="closeBtn">Schließen</button>
+      <button id="saveRestBtn">Speichern</button>
+    </div>
+    <p class="muted" style="margin-top:16px">
+      Für Freunde und Gruppen brauchst du ein Konto.
+    </p>
+    <button class="wide" id="signInBtn">Anmelden</button>`;
+  document.body.append(dialog);
+  dialog.addEventListener("close", () => dialog.remove());
+
+  dialog.querySelector("#closeBtn").addEventListener("click", () => dialog.close());
+  dialog.querySelector("#saveRestBtn").addEventListener("click", async () => {
+    const rest = clampRestSeconds(dialog.querySelector("#restField").value);
+    dialog.close();
+    if (rest === (profile.restSeconds || 90)) return;
+    await writeRestSeconds(rest);
+    renderTraining();
+  });
+  dialog.querySelector("#signInBtn").addEventListener("click", () => {
+    dialog.close();
+    leaveGuestModeForSignIn();
+  });
+
+  dialog.showModal();
+}
 
 /**
  * Speichert den Anzeigenamen und zieht ihn nach.
