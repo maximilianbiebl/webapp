@@ -48,6 +48,28 @@
       </div>
     </div>
 
+    <div class="card stack" id="trainingCard">
+      <div class="row">
+        <div class="grow">
+          <p class="muted" style="margin:0">Dein Level</p>
+          <h2 id="levelTitle" style="margin:0">…</h2>
+        </div>
+        <button class="chip" id="levelDown">−</button>
+        <button class="chip" id="levelUp">+</button>
+      </div>
+      <div class="setpills" id="setPills"></div>
+      <p class="muted" id="levelSummary"></p>
+      <button class="wide" id="startWorkout">Training starten</button>
+    </div>
+
+    <div class="card stack" id="statsCard">
+      <h2>Deine Zahlen</h2>
+      <div class="tiles" id="tiles"></div>
+      <p class="muted" id="goalLine"></p>
+      <div class="bar"><div id="goalBar" style="width:0%"></div></div>
+      <div id="history"></div>
+    </div>
+
     <div class="card stack">
       <div class="row">
         <h2 class="grow">Gruppen</h2>
@@ -70,6 +92,20 @@
 
   <p class="muted"><a href="../">Zur Startseite</a></p>
 </main>
+
+<!-- Der Trainingsbildschirm liegt ueber allem, damit nichts ablenkt. -->
+<div id="workout">
+  <p class="setline" id="wSet">…</p>
+  <div class="tapzone" id="wTap">
+    <div class="count" id="wCount">0</div>
+    <div class="of" id="wOf"></div>
+  </div>
+  <div class="controls">
+    <button class="ghost" id="wAbort">Abbrechen</button>
+    <button id="wNext">Satz fertig</button>
+  </div>
+</div>
+
 <script type="module" src="./main.js"></script>
 </body>
 </html>

@@ -11,9 +11,12 @@
 import {
   firebase, isConfigured, onAuthStateChanged, signInWithPopup, GoogleAuthProvider,
   signOut, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where,
-  parseId, buildLeaderboard, buildComparison, ID_LENGTH,
+  parseId, buildLeaderboard, buildComparison, ID_LENGTH, today,
 } from "../shared.js";
 import { ask, say, askForText } from "./dialogs.js";
+import { LEVEL_COUNT, levelReps, levelTotal, goalProgress } from "../levels.js";
+import { statistics, totalReps, bestSet } from "../stats.js";
+import { runWorkout } from "./training.js";
 
 const $ = (id) => document.getElementById(id);
 const show = (el, visible) => el.classList.toggle("hidden", !visible);
@@ -26,6 +29,9 @@ let me = null;
 let displayName = "";
 let range = 7;
 let sort = "reps";
+/** Das eigene Programm und der eigene Verlauf, so wie sie in der Cloud liegen. */
+let profile = { level: 1, goalReps: 100, updatedAt: 0 };
+let sessions = [];
 
 if (params.get("code") || params.get("join") || params.get("invite")) {
   // Sonst steht da nur "Anmelden", und warum, weiss niemand.
@@ -70,6 +76,85 @@ const membershipsRef = () => collection(fb.db, "users", me.uid, "memberships");
 async function readMyProfile() {
   const snapshot = await getDoc(profileRef());
   return snapshot.exists() ? snapshot.data().displayName || "" : "";
+}
+
+const privateProfileRef = () => doc(fb.db, "users", me.uid, "private", "profile");
+const sessionsRef = () => collection(fb.db, "users", me.uid, "sessions");
+
+async function readOwnTraining() {
+  const [profileDoc, sessionDocs] = await Promise.all([
+    getDoc(privateProfileRef()),
+    getDocs(sessionsRef()),
+  ]);
+  profile = profileDoc.exists()
+    ? {
+        level: profileDoc.data().level || 1,
+        goalReps: profileDoc.data().goalReps || 100,
+        levelStartedAt: profileDoc.data().levelStartedAt || 0,
+        hasChosenLevel: profileDoc.data().hasChosenLevel || false,
+        updatedAt: profileDoc.data().updatedAt || 0,
+      }
+    : { level: 1, goalReps: 100, levelStartedAt: 0, hasChosenLevel: false, updatedAt: 0 };
+  sessions = sessionDocs.docs.map((d) => ({
+    id: d.id,
+    timestampMillis: d.data().timestamp || 0,
+    level: d.data().level || 1,
+    plannedReps: d.data().plannedReps || [],
+    actualReps: d.data().actualReps || [],
+    durationSeconds: d.data().durationSeconds || 0,
+  }));
+}
+
+/**
+ * Schreibt das Programm zurueck.
+ *
+ * `updatedAt` entscheidet, welches Geraet gewonnen hat, wenn zwei dasselbe
+ * geaendert haben - die App merkt sich das genauso.
+ */
+async function writeProfile() {
+  profile.updatedAt = Date.now();
+  await setDoc(privateProfileRef(), {
+    level: profile.level,
+    levelStartedAt: profile.levelStartedAt || 0,
+    levelUpDismissedAtDays: 0,
+    lastTestResult: 0,
+    goalReps: profile.goalReps,
+    hasChosenLevel: true,
+    updatedAt: profile.updatedAt,
+  }, { merge: true });
+}
+
+/**
+ * Legt eine fertige Einheit ab - im eigenen Bereich und in allem, was geteilt
+ * wird. Dieselben drei Orte wie in der App, aus demselben Grund: Eine Regel
+ * soll nie herausfinden muessen, ob zwei Leute etwas gemeinsam haben.
+ */
+async function storeSession(workout) {
+  await setDoc(doc(sessionsRef(), workout.id), {
+    timestamp: workout.timestampMillis,
+    level: workout.level,
+    plannedReps: workout.plannedReps,
+    actualReps: workout.actualReps,
+    durationSeconds: workout.durationSeconds,
+  });
+
+  const entry = {
+    uid: me.uid,
+    performedOn: today(new Date(workout.timestampMillis)),
+    totalReps: totalReps(workout),
+    bestSet: bestSet(workout),
+    level: workout.level,
+  };
+
+  const groups = await readGroups();
+  await Promise.all(groups.filter((g) => g.sharing !== false).map((g) =>
+    setDoc(doc(fb.db, "groups", g.id, "entries", `${me.uid}_${workout.id}`), entry)));
+
+  const friendships = await readFriendships();
+  await Promise.all(friendships
+    .filter((f) => f.status === "accepted" && !f.pausedBy.includes(me.uid))
+    .map((f) =>
+      setDoc(doc(fb.db, "friendships", f.pairId, "entries", `${me.uid}_${workout.id}`), entry)));
 }
 
 async function readGroups() {
@@ -119,6 +204,10 @@ async function start() {
   $("whoami").textContent = displayName || "Ohne Namen";
   $("whoamiSub").textContent = me.email || "Anonymes Konto";
   $("name").value = displayName;
+
+  await readOwnTraining().catch(() => {});
+  renderTraining();
+  renderStats();
 
   await Promise.all([renderGroups(), renderFriends()]);
   await handleDeepLinks();
@@ -180,6 +269,94 @@ async function renderFriends() {
     box.innerHTML = `<p class="muted error">Freunde nicht lesbar: ${escape(error.code || error.message)}</p>`;
   }
 }
+
+function renderTraining() {
+  const reps = levelReps(profile.level);
+  $("levelTitle").textContent = `Level ${profile.level} von ${LEVEL_COUNT}`;
+  $("setPills").innerHTML = reps.map((n) => `<span>${n}</span>`).join("");
+  $("levelSummary").textContent =
+    `${levelTotal(profile.level)} Wiederholungen in ${reps.length} Sätzen, 90 Sekunden Pause.`;
+  $("levelDown").disabled = profile.level <= 1;
+  $("levelUp").disabled = profile.level >= LEVEL_COUNT;
+}
+
+function renderStats() {
+  const s = statistics(sessions);
+  const tiles = [
+    [s.totalReps, "Wiederholungen"],
+    [s.workoutCount, "Einheiten"],
+    [s.currentStreakDays, "Tage in Folge"],
+    [s.bestSet, "Bester Satz"],
+  ];
+  $("tiles").innerHTML = tiles
+    .map(([n, label]) => `<div><div class="n">${n}</div><div class="l">${label}</div></div>`)
+    .join("");
+
+  const progress = goalProgress(s.bestSet, profile.goalReps);
+  $("goalLine").textContent =
+    `Ziel: ${s.bestSet} von ${profile.goalReps} am Stück (${Math.round(progress * 100)} %) — ändern`;
+  $("goalLine").style.cursor = "pointer";
+  $("goalBar").style.width = `${progress * 100}%`;
+
+  const recent = [...sessions].sort((a, b) => b.timestampMillis - a.timestampMillis).slice(0, 10);
+  $("history").innerHTML = recent.length
+    ? recent.map((entry) => `
+        <div class="listrow" style="cursor:default">
+          <div class="grow">
+            <div class="name">${totalReps(entry)} Wiederholungen</div>
+            <div class="muted">${escape(entry.actualReps.join(" · "))}</div>
+          </div>
+          <div class="muted">${new Date(entry.timestampMillis).toLocaleDateString("de-DE")}</div>
+        </div>`).join("")
+    : `<p class="muted">Noch kein Training aufgezeichnet.</p>`;
+}
+
+// Das Ziel laesst sich hier genauso setzen wie in der App - sonst waere es das
+// einzige, wofuer man zum Telefon greifen muesste.
+$("goalLine").addEventListener("click", async () => {
+  const entered = await askForText("Dein Ziel", "Liegestütze am Stück", "Speichern");
+  const wanted = Number(entered);
+  if (!Number.isFinite(wanted)) return;
+  profile.goalReps = Math.min(Math.max(Math.round(wanted), 20), 300);
+  renderStats();
+  try {
+    await writeProfile();
+  } catch (error) {
+    await say("Nicht gespeichert", error.code || error.message);
+  }
+});
+
+$("levelUp").addEventListener("click", () => changeLevel(1));
+$("levelDown").addEventListener("click", () => changeLevel(-1));
+
+async function changeLevel(step) {
+  const wanted = Math.min(Math.max(profile.level + step, 1), LEVEL_COUNT);
+  if (wanted === profile.level) return;
+  profile.level = wanted;
+  profile.levelStartedAt = Date.now();
+  renderTraining();
+  try {
+    await writeProfile();
+  } catch (error) {
+    await say("Nicht gespeichert", error.code || error.message);
+  }
+}
+
+$("startWorkout").addEventListener("click", async () => {
+  const workout = await runWorkout(profile.level);
+  if (!workout) return;
+  sessions = [...sessions, workout];
+  renderStats();
+  try {
+    await storeSession(workout);
+  } catch (error) {
+    await say(
+      "Nicht überall gespeichert",
+      `Dein Training ist gezählt, konnte aber nicht vollständig hochgeladen werden: ` +
+      `${error.code || error.message}`,
+    );
+  }
+});
 
 const RANGES = [[7, "7 Tage"], [30, "30 Tage"], [0, "Gesamt"]];
 const SORTS = [["reps", "Wdh."], ["best", "Bester"], ["days", "Tage"]];
@@ -349,11 +526,31 @@ async function promptJoin(prefill) {
     );
     if (!yes) return;
     await joinExisting(id, name, Date.now());
+    await backfill(id);
     await renderGroups();
     openGroup(id);
   } catch (error) {
     await say("Beitreten fehlgeschlagen", error.code || error.message);
   }
+}
+
+/**
+ * Reicht die letzten 30 Tage nach, wenn man einer Gruppe beitritt.
+ *
+ * Ohne das stuende ein Neuzugang bei null neben Leuten, deren Wochen schon auf
+ * der Tafel stehen - dieselbe Ueberlegung wie in der App.
+ */
+async function backfill(groupId) {
+  const cutoff = Date.now() - 30 * 86400000;
+  const recent = sessions.filter((s) => s.timestampMillis >= cutoff);
+  await Promise.all(recent.map((workout) =>
+    setDoc(doc(fb.db, "groups", groupId, "entries", `${me.uid}_${workout.id}`), {
+      uid: me.uid,
+      performedOn: today(new Date(workout.timestampMillis)),
+      totalReps: totalReps(workout),
+      bestSet: bestSet(workout),
+      level: workout.level,
+    })));
 }
 
 async function joinExisting(groupId, groupName, now) {

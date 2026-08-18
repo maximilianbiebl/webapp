@@ -122,3 +122,111 @@ function today() {
   const pad = (n) => String(n).padStart(2, "0");
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
+
+/* ------------------------------------------------------------------ Training */
+
+import { readFileSync, existsSync } from "node:fs";
+import { LEVELS, LEVEL_COUNT, levelReps, suggestLevel, goalProgress } from "./levels.js";
+import { statistics, currentStreak, daysTrainedAtLevel, dayIndex } from "./stats.js";
+
+const session = (millis, reps, level = 1) => ({
+  id: String(millis), timestampMillis: millis, level,
+  plannedReps: reps, actualReps: reps, durationSeconds: 60,
+});
+const daysAgo = (n) => Date.now() - n * 86400000;
+
+test("Die Leiter hat 40 Level, in denen die Saetze streng fallen", () => {
+  assert.equal(LEVEL_COUNT, 40);
+  for (const reps of LEVELS) {
+    assert.equal(reps.length, 5);
+    for (let i = 0; i < 4; i += 1) assert.ok(reps[i] > reps[i + 1], reps.join(","));
+  }
+});
+
+test("Die Leiter stimmt mit der Kotlin-Fassung ueberein", (t) => {
+  const path = "../app/src/main/java/de/liegestuetzen/trainer/domain/Levels.kt";
+  const here = new URL(path, import.meta.url).pathname;
+  if (!existsSync(here)) {
+    t.skip("Levels.kt nicht erreichbar - eigenstaendiges Web-Repository");
+    return;
+  }
+  const source = readFileSync(here, "utf8");
+  const block = source.slice(
+    source.indexOf("val ALL: List<TrainingLevel>"),
+    source.indexOf(").mapIndexed"),
+  );
+  // Nur die Zeilen aus Zahlen: Das aeussere listOf( der Tabelle selbst darf
+  // nicht mitgelesen werden.
+  const fromKotlin = [...block.matchAll(/listOf\(\s*(\d[\d,\s]*?)\s*\)/g)]
+    .map((match) => match[1].split(",").map((n) => Number(n.trim())));
+  assert.deepEqual(LEVELS, fromKotlin);
+});
+
+test("Hoehere Level sind nie leichter als niedrigere", () => {
+  for (let n = 2; n <= LEVEL_COUNT; n += 1) {
+    const before = levelReps(n - 1).reduce((a, b) => a + b, 0);
+    const now = levelReps(n).reduce((a, b) => a + b, 0);
+    assert.ok(now > before, `Level ${n} ist nicht schwerer als ${n - 1}`);
+  }
+});
+
+test("Das vorgeschlagene Level zielt auf drei Viertel des Maximums", () => {
+  assert.equal(suggestLevel(0), 1);
+  assert.equal(suggestLevel(-5), 1);
+  assert.equal(suggestLevel(4), 1);
+  // 20 Wiederholungen -> Obergrenze 15 -> hoechstes Level mit erstem Satz <= 15
+  assert.equal(Math.max(...levelReps(suggestLevel(20))), 15);
+  assert.ok(suggestLevel(100) <= LEVEL_COUNT);
+});
+
+test("Der Zielfortschritt bleibt zwischen null und eins", () => {
+  assert.equal(goalProgress(50, 100), 0.5);
+  assert.equal(goalProgress(200, 100), 1);
+  assert.equal(goalProgress(10, 0), 0);
+});
+
+test("Die Statistik summiert, zaehlt und mittelt", () => {
+  const s = statistics([
+    session(daysAgo(1), [10, 8, 6, 4, 2]),
+    session(daysAgo(0), [12, 10, 8, 6, 4]),
+  ]);
+  assert.equal(s.workoutCount, 2);
+  assert.equal(s.totalReps, 30 + 40);
+  assert.equal(s.bestSet, 12);
+  assert.equal(s.bestSession, 40);
+  assert.equal(s.averagePerWorkout, 35);
+});
+
+test("Die Serie zaehlt Tage, nicht Einheiten", () => {
+  const two = [session(daysAgo(0), [5]), session(daysAgo(0), [5]), session(daysAgo(1), [5])];
+  assert.equal(currentStreak(two), 2);
+});
+
+test("Gestern haelt die Serie am Leben, vorgestern nicht", () => {
+  assert.equal(currentStreak([session(daysAgo(1), [5])]), 1);
+  assert.equal(currentStreak([session(daysAgo(2), [5])]), 0);
+  assert.equal(currentStreak([]), 0);
+});
+
+test("Eine Luecke beendet die Serie", () => {
+  const sessions = [session(daysAgo(0), [5]), session(daysAgo(1), [5]), session(daysAgo(3), [5])];
+  assert.equal(currentStreak(sessions), 2);
+});
+
+test("Trainingstage auf einem Level zaehlen Tage seit dem Wechsel", () => {
+  const since = daysAgo(5);
+  const sessions = [
+    session(daysAgo(4), [5], 3),
+    session(daysAgo(4), [5], 3),
+    session(daysAgo(2), [5], 3),
+    session(daysAgo(1), [5], 4),
+    session(daysAgo(9), [5], 3),
+  ];
+  assert.equal(daysTrainedAtLevel(sessions, 3, since), 2);
+});
+
+test("Der Tagesindex ignoriert die Uhrzeit", () => {
+  const morning = new Date(2026, 7, 18, 6, 30).getTime();
+  const night = new Date(2026, 7, 18, 23, 45).getTime();
+  assert.equal(dayIndex(morning), dayIndex(night));
+});

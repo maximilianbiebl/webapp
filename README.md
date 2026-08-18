@@ -15,9 +15,19 @@ Läuft unter **https://maximilianbiebl.github.io/webapp/**
 | `g/` | Gruppeneinladung |
 | `f/` | Freundschaftseinladung |
 | `app/` | Die Webversion: Gruppen, Bestenlisten, Direktvergleich |
-| `logic.js` | Die Rechenlogik, ohne Firebase und ohne Browser |
+| `logic.js` | Auswertung von Gruppen und Vergleichen |
+| `levels.js` | Die 40 Level — **erzeugt** aus `domain/Levels.kt` der App |
+| `stats.js` | Die persönlichen Zahlen: Serie, Summen, Trainingstage |
+| `app/training.js` | Der Trainingsbildschirm |
 | `logic.test.mjs` | Prüfungen dazu: `node --test logic.test.mjs` |
 | `.well-known/assetlinks.json` | Für Android-App-Links, siehe unten |
+
+Die Seite kann inzwischen dasselbe wie die App, mit einer Ausnahme: Gezählt
+wird nur durch Tippen — einen Näherungssensor gibt es im Browser nicht, und
+eine tägliche Erinnerung kann eine Webseite nicht schicken. Trainieren, Level
+wechseln, Ziel setzen, Verlauf, Gruppen, Bestenlisten, Direktvergleich und
+Einladungen sind alle da. Was hier trainiert wird, steht auf dem Telefon, und
+umgekehrt: dieselbe Datenbank, kein Abgleich zwischen zwei Programmen.
 
 Kein Bauschritt, keine Abhängigkeiten außer dem Firebase-SDK, das direkt von
 Google geladen wird. Was hier liegt, ist, was ausgeliefert wird.
