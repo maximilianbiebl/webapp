@@ -213,6 +213,33 @@ dialog .actions button { padding: 10px 18px; }
 }
 
 /*
+ * Die Raststellen auf der Satzpause-Spur - dieselben kleinen Punkte, die ein
+ * Material3-Slider mit `steps` zeichnet. Ein natives <input type="range">
+ * kann das nicht von sich aus, und die Browser-eigene datalist-Umsetzung
+ * dafuer ist zu uneinheitlich (Safari zeigt gar nichts); eine eigene Reihe
+ * Punkte sieht ueberall gleich aus. `left`/`right` gleichen den Radius des
+ * Griffs aus, damit der erste und letzte Punkt genau unter dem Griff liegen,
+ * wenn er ganz links bzw. rechts steht.
+ */
+.restSliderWrap { position: relative; }
+.restTicks {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.restTicks span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--bg);
+}
+
+/*
  * Ein Regler, der wie Slider in der App aussieht: eine duenne abgerundete
  * Spur, links davon in der Akzentfarbe gefuellt, ein runder Griff obendrauf.
  * Das native <input type="range"> gibt das nicht von sich aus her - --fill

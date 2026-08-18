@@ -11,10 +11,7 @@
 <body>
 <header class="site">
   <div class="brand"><span class="dot"></span> <span data-i18n="brand">Liegestütze</span></div>
-  <div class="langPicker">
-    <span class="muted" data-i18n="languageLabel">Sprache</span>
-    <div class="chips" id="langChips"></div>
-  </div>
+  <button type="button" class="chip" id="langBtn">Sprache</button>
 </header>
 <main>
   <h1 data-i18n="homeHeading">Vom ersten Satz bis zu hundert am Stück</h1>
@@ -49,7 +46,7 @@
   </p>
 </main>
 <script type="module">
-  import { t, getLanguage, setLanguage, LANGUAGE_OPTIONS } from "./strings.js";
+  import { t, getLanguage, wireLanguagePicker } from "./strings.js";
 
   function applyTranslations() {
     document.documentElement.lang = getLanguage() === "en" ? "en" : "de";
@@ -60,27 +57,9 @@
     });
   }
 
-  function languageChipsHtml() {
-    const current = getLanguage();
-    return LANGUAGE_OPTIONS.map(([value, key]) =>
-      `<button type="button" class="chip" data-lang="${value}" aria-pressed="${value === current}">${t(key)}</button>`,
-    ).join("");
-  }
-
-  function renderLanguageChips() {
-    const chips = document.getElementById("langChips");
-    chips.innerHTML = languageChipsHtml();
-    chips.querySelectorAll("[data-lang]").forEach((chip) =>
-      chip.addEventListener("click", () => setLanguage(chip.dataset.lang)));
-  }
-
-  window.addEventListener("liegestuetzen:language", () => {
-    applyTranslations();
-    renderLanguageChips();
-  });
-
+  window.addEventListener("liegestuetzen:language", applyTranslations);
+  wireLanguagePicker(document.getElementById("langBtn"));
   applyTranslations();
-  renderLanguageChips();
 </script>
 </body>
 </html>

@@ -22,7 +22,7 @@ import {
   loadGuestProfile, saveGuestProfile, loadGuestSessions, saveGuestSessions,
   hasGuestData, clearGuestData,
 } from "./local.js";
-import { t, getLanguage, setLanguage, LANGUAGE_OPTIONS } from "../strings.js";
+import { t, getLanguage, wireLanguagePicker } from "../strings.js";
 
 const $ = (id) => document.getElementById(id);
 const show = (el, visible) => el.classList.toggle("hidden", !visible);
@@ -34,19 +34,6 @@ function formatDuration(seconds) {
   const minutes = Math.floor(seconds / 60);
   const remaining = seconds % 60;
   return `${minutes}:${String(remaining).padStart(2, "0")}`;
-}
-
-/** Baut die Sprach-Chips - dieselbe Art Regler wie bei Zeitraum und Sortierung. */
-function languageChipsHtml() {
-  const current = getLanguage();
-  return LANGUAGE_OPTIONS.map(([value, key]) =>
-    `<button type="button" class="chip" data-lang="${value}" aria-pressed="${value === current}">${t(key)}</button>`,
-  ).join("");
-}
-
-function wireLanguageChips(container) {
-  container.querySelectorAll("[data-lang]").forEach((chip) =>
-    chip.addEventListener("click", () => setLanguage(chip.dataset.lang)));
 }
 
 /**
@@ -62,12 +49,9 @@ function applyTranslations() {
     el.textContent = text;
     if (el.dataset.i18nAttr) el.setAttribute(el.dataset.i18nAttr, text);
   });
-  const chips = $("langChips");
-  if (chips) {
-    chips.innerHTML = languageChipsHtml();
-    wireLanguageChips(chips);
-  }
 }
+
+wireLanguagePicker($("langBtn"));
 
 window.addEventListener("liegestuetzen:language", () => {
   applyTranslations();
@@ -944,14 +928,20 @@ function restFillPercent(seconds) {
   return ((seconds - 30) / (240 - 30)) * 100;
 }
 
-/** Baut Satzpause-Anzeige und -Regler, wie RestCard in der App: eine grosse m:ss-Zahl ueber dem Schieberegler. */
+/** 30, 60, 90 ... 240 - dieselben acht Raststellen wie Slider(steps = 6) in RestCard. */
+const REST_STOPS = [30, 60, 90, 120, 150, 180, 210, 240];
+
+/** Baut Satzpause-Anzeige und -Regler, wie RestCard in der App: eine grosse m:ss-Zahl ueber dem Schieberegler mit sichtbaren Raststellen. */
 function restSliderMarkup(presetSeconds) {
   const seconds = presetSeconds ?? (profile.restSeconds || 90);
   return `
     <p class="muted" style="margin-top:12px">${t("settingsRestTitle")}</p>
     <p class="restValue" id="restValue">${formatDuration(seconds)}</p>
-    <input type="range" id="restSlider" min="30" max="240" step="30" value="${seconds}"
-      style="--fill:${restFillPercent(seconds)}%">`;
+    <div class="restSliderWrap">
+      <input type="range" id="restSlider" min="30" max="240" step="30" value="${seconds}"
+        style="--fill:${restFillPercent(seconds)}%">
+      <div class="restTicks" aria-hidden="true">${REST_STOPS.map(() => "<span></span>").join("")}</div>
+    </div>`;
 }
 
 /** Live-Anzeige beim Ziehen; gespeichert wird erst beim Klick auf "Speichern". */
@@ -966,16 +956,6 @@ function wireRestSlider(dialog) {
   return () => clampRestSeconds(Number(slider.value));
 }
 
-function languageSelectMarkup() {
-  return `
-    <p class="muted" style="margin-top:12px">${t("languageLabel")}</p>
-    <div class="chips" id="langFieldChips">${languageChipsHtml()}</div>`;
-}
-
-function wireLanguageSelect(dialog) {
-  wireLanguageChips(dialog.querySelector("#langFieldChips"));
-}
-
 /**
  * Die Einstellungen: Satzpause und Sprache immer, Anzeigename und Abmelden
  * nur mit Konto. Kein Konto-Loeschen hier - das ist ein mehrschrittiger
@@ -988,8 +968,10 @@ function openSettingsDialog({ guest, presetRest }) {
     <h2>${t("settingsTitle")}</h2>
     <p class="muted">${guest ? t("settingsGuestHint") : t("settingsAccountEmail", escape(me.email))}</p>
     ${guest ? "" : `<input type="text" id="nameField" placeholder="${t("settingsNamePlaceholder")}" autocomplete="off" value="${escape(displayName)}">`}
-    ${languageSelectMarkup()}
     ${restSliderMarkup(presetRest)}
+    <div class="row" style="margin-top:12px">
+      <button type="button" class="chip" id="langFieldBtn">Sprache</button>
+    </div>
     <div class="actions">
       <button class="ghost" id="closeBtn">${t("settingsClose")}</button>
       ${guest ? "" : `<button class="ghost" id="signOutBtn">${t("settingsSignOut")}</button>`}
@@ -1002,7 +984,8 @@ function openSettingsDialog({ guest, presetRest }) {
   dialog.addEventListener("close", () => dialog.remove());
 
   const readRest = wireRestSlider(dialog);
-  wireLanguageSelect(dialog);
+  const unwireLanguagePicker = wireLanguagePicker(dialog.querySelector("#langFieldBtn"));
+  dialog.addEventListener("close", () => unwireLanguagePicker());
 
   // Die Sprache kann sich aendern, waehrend der Dialog offen ist - dann wird
   // er mit der noch nicht gespeicherten Satzpause neu aufgebaut, statt mit

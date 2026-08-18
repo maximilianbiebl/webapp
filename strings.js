@@ -513,3 +513,42 @@ export function t(key, ...args) {
   if (entry === undefined) return key;
   return typeof entry === "function" ? entry(...args) : entry;
 }
+
+/**
+ * Macht aus einem Knopf die Sprachwahl: Der Knopf heisst schlicht "Sprache"
+ * (uebersetzt), ein Klick oeffnet einen kleinen Dialog mit den drei Optionen
+ * als Chips. Drei Chips staendig sichtbar nebeneinander waren zu praesent
+ * fuer eine Einstellung, die kaum jemand oft anfasst - ein Knopf mit Namen
+ * plus ein Dropdown dahinter braucht nur an einer Stelle Platz, nicht ueberall,
+ * wo die Sprachwahl vorkommt.
+ *
+ * Eine Seite ruft dies einmal pro Knopf auf; die Funktion haelt sich selbst
+ * aktuell, auch wenn sich die Sprache anderswo aendert. Fuer einen Knopf, der
+ * wieder verschwinden kann (z.B. in einem Dialog), gibt sie eine Aufraeum-
+ * funktion zurueck, die den window-Listener wieder entfernt.
+ */
+export function wireLanguagePicker(button) {
+  const refreshLabel = () => { button.textContent = t("languageLabel"); };
+  refreshLabel();
+  window.addEventListener("liegestuetzen:language", refreshLabel);
+
+  button.addEventListener("click", () => {
+    const dialog = document.createElement("dialog");
+    const current = getLanguage();
+    dialog.innerHTML = `
+      <h2>${t("languageLabel")}</h2>
+      <div class="chips">${LANGUAGE_OPTIONS.map(([value, key]) =>
+        `<button type="button" class="chip" data-lang="${value}" aria-pressed="${value === current}">${t(key)}</button>`,
+      ).join("")}</div>`;
+    document.body.append(dialog);
+    dialog.addEventListener("close", () => dialog.remove());
+    dialog.querySelectorAll("[data-lang]").forEach((chip) =>
+      chip.addEventListener("click", () => {
+        setLanguage(chip.dataset.lang);
+        dialog.close();
+      }));
+    dialog.showModal();
+  });
+
+  return () => window.removeEventListener("liegestuetzen:language", refreshLabel);
+}
