@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "de.liegestuetzen.trainer",
+      "sha256_cert_fingerprints": [
+        "EC:B3:1C:39:7C:28:AA:FB:7F:65:6E:88:95:7D:A0:8A:CE:D9:12:DB:86:AD:8B:BB:C2:69:93:DC:00:70:6B:6C"
+      ]
+    }
+  }
+]

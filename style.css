@@ -1,0 +1,147 @@
+/*
+ * Eine Datei für alle Seiten. Die Webversion soll aussehen wie die App:
+ * dieselbe orange Grundfarbe, dieselben Karten, dieselbe Ruhe.
+ */
+:root {
+  --orange: #ff6b35;
+  --orange-dark: #c44214;
+  --bg: #fdfcfb;
+  --card: #ffffff;
+  --ink: #1c1b1f;
+  --muted: #5a534e;
+  --line: #e3dad3;
+  --radius: 20px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121212;
+    --card: #232022;
+    --ink: #e6e1e5;
+    --muted: #cfc7ca;
+    --line: #3a3436;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+main { max-width: 680px; margin: 0 auto; padding: 24px 16px 64px; }
+
+h1 { font-size: 1.9rem; margin: 0 0 4px; }
+h2 { font-size: 1.15rem; margin: 0 0 8px; }
+p { margin: 0 0 12px; }
+
+.lead { color: var(--muted); }
+.muted { color: var(--muted); font-size: 0.86rem; }
+.accent { color: var(--orange); }
+
+header.site { padding: 28px 16px 8px; max-width: 680px; margin: 0 auto; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.brand .dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--orange);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin: 0 0 16px;
+}
+
+button, .button {
+  display: inline-block;
+  font: inherit;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 12px 20px;
+  border: 1px solid var(--orange);
+  background: var(--orange);
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+}
+button.ghost, .button.ghost { background: transparent; color: var(--orange); }
+button:disabled { opacity: 0.5; cursor: default; }
+button.wide, .button.wide { display: block; width: 100%; }
+
+input[type="text"] {
+  font: inherit;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.row { display: flex; align-items: center; gap: 12px; }
+.row .grow { flex: 1; min-width: 0; }
+.stack > * + * { margin-top: 12px; }
+
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip[aria-pressed="true"] {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff;
+}
+
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: right;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  font-weight: 600;
+  padding-bottom: 6px;
+}
+th:first-child, td:first-child { text-align: left; }
+td { padding: 7px 0; border-top: 1px solid var(--line); text-align: right; }
+tr.self td { color: var(--orange); font-weight: 700; }
+.sub { display: block; font-size: 0.75rem; color: var(--muted); font-weight: 400; }
+
+.listrow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 0; border-top: 1px solid var(--line);
+  cursor: pointer;
+}
+.listrow:first-of-type { border-top: 0; }
+.listrow .name { font-weight: 600; }
+
+.code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 1rem;
+  word-break: break-all;
+  color: var(--orange);
+}
+
+.compare { display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px 10px; align-items: center; }
+.compare .value { font-size: 1.25rem; font-weight: 700; text-align: center; }
+.compare .label { font-size: 0.72rem; color: var(--muted); text-align: center; }
+.compare .ahead { color: var(--orange); }
+.compare .head { font-size: 0.8rem; color: var(--muted); text-align: center; }
+
+.error { color: var(--orange-dark); }
+.hidden { display: none !important; }

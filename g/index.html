@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Einladung zu einer Gruppe</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site"><div class="brand"><span class="dot"></span> Liegestütze</div></header>
+<main>
+  <h1>Du bist eingeladen</h1>
+  <p class="lead">
+    Jemand möchte mit dir zusammen trainieren. Mit diesem Code kommst du in die
+    Gruppe – in der App oder im Browser.
+  </p>
+
+  <div class="card stack">
+    <h2>Der Code</h2>
+    <p class="code" id="code">…</p>
+    <button class="wide" id="copy">Code kopieren</button>
+    <p class="muted">
+      Ist die App installiert, öffnet dieser Link sie normalerweise von selbst.
+      Passiert nichts, öffne die App, geh auf <strong>Gruppen</strong> →
+      <strong>Gruppe beitreten</strong> und füge den Code dort ein.
+    </p>
+  </div>
+
+  <div class="card stack">
+    <h2>Noch keine App?</h2>
+    <a class="button wide" href="https://github.com/maximilianbiebl/Liegestutzen/raw/claude/gruppen-und-freunde/dist/liegestuetze.apk">
+      Android-App herunterladen
+    </a>
+    <a class="button ghost wide" id="web" href="../app/">Stattdessen im Browser beitreten</a>
+  </div>
+
+  <p class="muted">
+    Der Code ist zugleich das Passwort der Gruppe. Gib ihn nur an Leute weiter,
+    die dabei sein sollen.
+  </p>
+</main>
+<script type="module">
+  import { parseId } from "../shared.js";
+  const id = parseId(new URLSearchParams(location.search).get("id") || location.href);
+  const field = document.getElementById("code");
+  field.textContent = id || "Kein gültiger Code in diesem Link.";
+  const copy = document.getElementById("copy");
+  if (!id) copy.disabled = true;
+  copy.addEventListener("click", async () => {
+    await navigator.clipboard.writeText(id);
+    copy.textContent = "Kopiert";
+  });
+  // Wer im Browser weitermacht, soll den Code nicht noch einmal tippen müssen.
+  document.querySelector("#web").href = id ? `../app/?join=${id}` : "../app/";
+</script>
+</body>
+</html>

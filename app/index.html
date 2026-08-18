@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liegestütze – Web</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="row">
+    <div class="brand grow"><span class="dot"></span> Liegestütze</div>
+    <button class="chip hidden" id="signOut">Abmelden</button>
+  </div>
+</header>
+<main>
+  <div class="card stack hidden" id="unconfigured">
+    <h2>Noch nicht eingerichtet</h2>
+    <p class="muted">
+      In <code>web/firebase-config.js</code> fehlen die Zugangsdaten der
+      Web-App. Sie stehen in der Firebase-Konsole unter Projekteinstellungen →
+      Meine Apps → Web-App hinzufügen.
+    </p>
+  </div>
+
+  <div class="card stack" id="signIn">
+    <h2>Anmelden</h2>
+    <p class="muted">
+      Nimm dasselbe Google-Konto wie in der App – dann siehst du hier dieselben
+      Gruppen und Freunde. Verknüpfe dein Konto vorher in der App unter
+      Einstellungen → Konto, sonst legst du hier ein zweites an.
+    </p>
+    <button class="wide" id="google">Mit Google anmelden</button>
+    <p class="muted error hidden" id="signInError"></p>
+  </div>
+
+  <div id="app" class="hidden">
+    <div class="card stack">
+      <div class="row">
+        <div class="grow">
+          <h2 id="whoami">…</h2>
+          <p class="muted" id="whoamiSub"></p>
+        </div>
+      </div>
+      <div class="row">
+        <input type="text" id="name" class="grow" placeholder="Anzeigename" autocomplete="off">
+        <button class="ghost" id="saveName">Speichern</button>
+      </div>
+    </div>
+
+    <div class="card stack">
+      <div class="row">
+        <h2 class="grow">Gruppen</h2>
+        <button class="chip" id="newGroup">Neue Gruppe</button>
+        <button class="chip" id="joinGroup">Beitreten</button>
+      </div>
+      <div id="groups"><p class="muted">Wird geladen …</p></div>
+    </div>
+
+    <div class="card stack">
+      <div class="row">
+        <h2 class="grow">Freunde</h2>
+        <button class="chip" id="redeem">Einladung einlösen</button>
+      </div>
+      <div id="friends"><p class="muted">Wird geladen …</p></div>
+    </div>
+
+    <div id="detail"></div>
+  </div>
+
+  <p class="muted"><a href="../">Zur Startseite</a></p>
+</main>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
