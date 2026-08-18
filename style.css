@@ -1,16 +1,14 @@
 /*
  * Eine Datei für alle Seiten.
  *
- * Dunkel ist der Standard, nicht nur eine Anpassung an die Systemeinstellung -
- * ein heller Systemwunsch wird respektiert, aber dunkel ist, was jeder sieht,
- * der nichts eingestellt hat. Der Akzent ist ein sehr helles Grau statt der
- * Markenfarbe der App: Auf einem dunklen Grund faellt Weiss auf, ohne mit der
- * App zu konkurrieren, die ihr eigenes Orange hat.
+ * Dunkel ist nicht nur die Vorgabe, sondern die einzige Erscheinung - dieselbe
+ * Gestaltung wie die App, wenn sie dunkel dargestellt wird: ein sehr helles
+ * Grau als Akzent statt der Markenfarbe. Es gibt bewusst keine helle Fassung
+ * und keine Anpassung an die Systemeinstellung, damit die Seite auf jedem
+ * Geraet gleich aussieht statt vom Zufall der Systemeinstellung abzuhaengen.
  *
  * --accent-contrast ist die Farbe für Text und Symbole auf einer Flaeche in
- * --accent - dunkel im dunklen Schema (auf hellem Akzent), hell im hellen
- * Schema (auf dunklem Akzent). Damit braucht keine einzelne Regel weiter unten
- * ein festes #fff oder #000 zu raten.
+ * --accent - hier immer dunkel, weil der Akzent hell ist.
  */
 :root {
   --accent: #f2f0ee;
@@ -22,19 +20,6 @@
   --line: #3a3436;
   --danger: #ff8a80;
   --radius: 20px;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --accent: #1c1b1f;
-    --accent-contrast: #ffffff;
-    --bg: #fdfcfb;
-    --card: #ffffff;
-    --ink: #1c1b1f;
-    --muted: #5a534e;
-    --line: #e3dad3;
-    --danger: #b3261e;
-  }
 }
 
 * { box-sizing: border-box; }
@@ -177,10 +162,9 @@ dialog {
   max-width: 420px;
   width: calc(100% - 32px);
 }
-/* Der native Farbschema-Umschalter des Browsers, sonst zeichnet er die
-   Dialog-Backdrop und Formularelemente in seinem eigenen (hellen) Standard. */
+/* Sagt dem Browser, dass die Seite dunkel ist, damit er eingebaute Elemente
+   (Formularfelder, Dialog-Backdrop) nicht in seinem hellen Standard zeichnet. */
 :root { color-scheme: dark; }
-@media (prefers-color-scheme: light) { :root { color-scheme: light; } }
 dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
 dialog h2 { margin-bottom: 8px; }
 dialog .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
