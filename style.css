@@ -128,6 +128,7 @@ tr.self td { color: var(--orange); font-weight: 700; }
   cursor: pointer;
 }
 .listrow:first-of-type { border-top: 0; }
+.listrow.current .name { color: var(--orange); }
 .listrow .name { font-weight: 600; }
 
 .code {
@@ -195,6 +196,13 @@ dialog .actions button { padding: 10px 18px; }
 }
 #workout.open { display: flex; }
 #workout.hot { background: var(--orange); color: #fff; }
+
+#workout .whead { display: flex; flex-direction: column; gap: 8px; padding-bottom: 8px; }
+#workout .setpills span { background: rgba(128, 128, 128, 0.18); }
+#workout.hot .setpills span { background: rgba(255, 255, 255, 0.25); color: #fff; }
+#workout.hot .setpills span.done { background: #fff; color: var(--orange); }
+#workout.hot .setpills span.active { outline-color: #fff; }
+#workout #wNote { min-height: 1.3em; }
 
 #workout .tapzone {
   flex: 1;

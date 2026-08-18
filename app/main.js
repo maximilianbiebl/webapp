@@ -14,7 +14,7 @@ import {
   parseId, buildLeaderboard, buildComparison, ID_LENGTH, today,
 } from "../shared.js";
 import { ask, say, askForText } from "./dialogs.js";
-import { LEVEL_COUNT, levelReps, levelTotal, goalProgress } from "../levels.js";
+import { LEVEL_COUNT, levelReps, levelTotal, goalProgress, suggestLevel } from "../levels.js";
 import { statistics, totalReps, bestSet } from "../stats.js";
 import { runWorkout } from "./training.js";
 
@@ -92,9 +92,13 @@ async function readOwnTraining() {
         goalReps: profileDoc.data().goalReps || 100,
         levelStartedAt: profileDoc.data().levelStartedAt || 0,
         hasChosenLevel: profileDoc.data().hasChosenLevel || false,
+        lastTestResult: profileDoc.data().lastTestResult || 0,
         updatedAt: profileDoc.data().updatedAt || 0,
       }
-    : { level: 1, goalReps: 100, levelStartedAt: 0, hasChosenLevel: false, updatedAt: 0 };
+    : {
+        level: 1, goalReps: 100, levelStartedAt: 0,
+        hasChosenLevel: false, lastTestResult: 0, updatedAt: 0,
+      };
   sessions = sessionDocs.docs.map((d) => ({
     id: d.id,
     timestampMillis: d.data().timestamp || 0,
@@ -108,6 +112,11 @@ async function readOwnTraining() {
 /**
  * Schreibt das Programm zurueck.
  *
+ * Nur die Felder, die diese Seite ueberhaupt aendern kann. Die erste Fassung
+ * schrieb auch `lastTestResult: 0` mit - und haette damit das Ergebnis des
+ * Maximaltests ueberall geloescht, sobald hier jemand das Level wechselt. Was
+ * eine Seite nicht bearbeitet, darf sie auch nicht schreiben.
+ *
  * `updatedAt` entscheidet, welches Geraet gewonnen hat, wenn zwei dasselbe
  * geaendert haben - die App merkt sich das genauso.
  */
@@ -116,8 +125,6 @@ async function writeProfile() {
   await setDoc(privateProfileRef(), {
     level: profile.level,
     levelStartedAt: profile.levelStartedAt || 0,
-    levelUpDismissedAtDays: 0,
-    lastTestResult: 0,
     goalReps: profile.goalReps,
     hasChosenLevel: true,
     updatedAt: profile.updatedAt,
@@ -275,9 +282,35 @@ function renderTraining() {
   $("levelTitle").textContent = `Level ${profile.level} von ${LEVEL_COUNT}`;
   $("setPills").innerHTML = reps.map((n) => `<span>${n}</span>`).join("");
   $("levelSummary").textContent =
-    `${levelTotal(profile.level)} Wiederholungen in ${reps.length} Sätzen, 90 Sekunden Pause.`;
+    `${levelTotal(profile.level)} Wiederholungen in ${reps.length} Sätzen, ` +
+    `90 Sekunden Pause dazwischen.`;
   $("levelDown").disabled = profile.level <= 1;
   $("levelUp").disabled = profile.level >= LEVEL_COUNT;
+
+  // Ein Vorschlag aus dem Maximaltest, solange man ihm nicht gefolgt ist.
+  const suggested = profile.lastTestResult ? suggestLevel(profile.lastTestResult) : 0;
+  const hint = $("levelHint");
+  if (suggested && suggested !== profile.level) {
+    hint.textContent =
+      `Dein Test von ${profile.lastTestResult} am Stück spricht für Level ${suggested}.`;
+    hint.classList.remove("hidden");
+  } else {
+    hint.classList.add("hidden");
+  }
+}
+
+/** Was gerade geschafft wurde, in Zahlen — sonst verschwindet es kommentarlos. */
+async function showSummary(workout) {
+  const done = totalReps(workout);
+  const target = workout.plannedReps.reduce((sum, n) => sum + n, 0);
+  const complete = workout.actualReps.every((n, i) => n >= workout.plannedReps[i]) &&
+    workout.actualReps.length === levelReps(workout.level).length;
+  await say(
+    complete ? "Training geschafft" : "Training beendet",
+    `${done} Wiederholungen in ${workout.actualReps.length} Sätzen ` +
+    `(${workout.actualReps.join(" · ")}), geplant waren ${target}. ` +
+    `Bester Satz: ${bestSet(workout)}.`,
+  );
 }
 
 function renderStats() {
@@ -297,6 +330,10 @@ function renderStats() {
     `Ziel: ${s.bestSet} von ${profile.goalReps} am Stück (${Math.round(progress * 100)} %) — ändern`;
   $("goalLine").style.cursor = "pointer";
   $("goalBar").style.width = `${progress * 100}%`;
+
+  $("testLine").textContent = profile.lastTestResult
+    ? `Letzter Maximaltest: ${profile.lastTestResult} am Stück`
+    : "Noch kein Maximaltest gemacht — der geht in der App.";
 
   const recent = [...sessions].sort((a, b) => b.timestampMillis - a.timestampMillis).slice(0, 10);
   $("history").innerHTML = recent.length
@@ -326,14 +363,59 @@ $("goalLine").addEventListener("click", async () => {
   }
 });
 
+/**
+ * Alle 40 Level zum Nachsehen.
+ *
+ * Das Level ist die eine Zahl, um die sich die ganze App dreht, und ohne die
+ * Leiter daneben sagt sie nichts: Man will sehen, was vor einem liegt und was
+ * man hinter sich hat.
+ */
+$("allLevels").addEventListener("click", () => {
+  const rows = Array.from({ length: LEVEL_COUNT }, (unused, index) => {
+    const number = index + 1;
+    const reps = levelReps(number);
+    const current = number === profile.level;
+    return `
+      <div class="listrow ${current ? "current" : ""}" data-level="${number}">
+        <div class="grow">
+          <div class="name">Level ${number}${current ? " · dein Level" : ""}</div>
+          <div class="muted">${reps.join(" · ")}</div>
+        </div>
+        <div class="muted">${levelTotal(number)}</div>
+      </div>`;
+  }).join("");
+
+  const dialog = document.createElement("dialog");
+  dialog.innerHTML = `
+    <h2>Alle Level</h2>
+    <p class="muted">Tippe auf ein Level, um dorthin zu wechseln.</p>
+    <div style="max-height:60vh;overflow:auto">${rows}</div>
+    <div class="actions"><button class="ghost">Schließen</button></div>`;
+  document.body.append(dialog);
+
+  dialog.querySelector("button").addEventListener("click", () => dialog.close());
+  dialog.addEventListener("close", () => dialog.remove());
+  dialog.querySelectorAll("[data-level]").forEach((row) =>
+    row.addEventListener("click", async () => {
+      dialog.close();
+      await setLevel(Number(row.dataset.level));
+    }));
+
+  dialog.showModal();
+  dialog.querySelector(".current")?.scrollIntoView({ block: "center" });
+});
+
 $("levelUp").addEventListener("click", () => changeLevel(1));
 $("levelDown").addEventListener("click", () => changeLevel(-1));
 
-async function changeLevel(step) {
-  const wanted = Math.min(Math.max(profile.level + step, 1), LEVEL_COUNT);
-  if (wanted === profile.level) return;
-  profile.level = wanted;
+const changeLevel = (step) => setLevel(profile.level + step);
+
+async function setLevel(wanted) {
+  const level = Math.min(Math.max(wanted, 1), LEVEL_COUNT);
+  if (level === profile.level) return;
+  profile.level = level;
   profile.levelStartedAt = Date.now();
+  profile.hasChosenLevel = true;
   renderTraining();
   try {
     await writeProfile();
@@ -347,6 +429,7 @@ $("startWorkout").addEventListener("click", async () => {
   if (!workout) return;
   sessions = [...sessions, workout];
   renderStats();
+  await showSummary(workout);
   try {
     await storeSession(workout);
   } catch (error) {

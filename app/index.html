@@ -59,12 +59,15 @@
       </div>
       <div class="setpills" id="setPills"></div>
       <p class="muted" id="levelSummary"></p>
+      <p class="muted hint hidden" id="levelHint"></p>
       <button class="wide" id="startWorkout">Training starten</button>
+      <button class="ghost wide" id="allLevels">Alle Level ansehen</button>
     </div>
 
     <div class="card stack" id="statsCard">
       <h2>Deine Zahlen</h2>
       <div class="tiles" id="tiles"></div>
+      <p class="muted" id="testLine"></p>
       <p class="muted" id="goalLine"></p>
       <div class="bar"><div id="goalBar" style="width:0%"></div></div>
       <div id="history"></div>
@@ -95,14 +98,20 @@
 
 <!-- Der Trainingsbildschirm liegt ueber allem, damit nichts ablenkt. -->
 <div id="workout">
-  <p class="setline" id="wSet">…</p>
+  <div class="whead">
+    <p class="setline" id="wLevel">…</p>
+    <div class="setpills" id="wPills"></div>
+    <p class="setline" id="wSet">…</p>
+  </div>
   <div class="tapzone" id="wTap">
     <div class="count" id="wCount">0</div>
     <div class="of" id="wOf"></div>
   </div>
+  <p class="setline" id="wNote"></p>
   <div class="controls">
-    <button class="ghost" id="wAbort">Abbrechen</button>
-    <button id="wNext">Satz fertig</button>
+    <button class="ghost" id="wAbort">Verwerfen</button>
+    <button class="ghost hidden" id="wStop">Hier beenden</button>
+    <button id="wNext">Weiter</button>
   </div>
 </div>
 
