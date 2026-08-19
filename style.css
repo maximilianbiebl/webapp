@@ -36,6 +36,13 @@ main { max-width: 680px; margin: 0 auto; padding: 24px 16px 64px; }
 
 h1 { font-size: 1.9rem; margin: 0 0 4px; }
 h2 { font-size: 1.15rem; margin: 0 0 8px; }
+h3 { font-size: 1rem; margin: 16px 0 4px; }
+ul { margin: 0 0 12px; padding-left: 20px; }
+li { margin: 0 0 4px; }
+code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.9em;
+}
 p { margin: 0 0 12px; }
 
 .lead { color: var(--muted); }
