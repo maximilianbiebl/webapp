@@ -1,0 +1,50 @@
+# Veroeffentlicht die Webapp bei jedem Push auf main.
+#
+# Der Deploy laedt das aus, was hier im Repo liegt - Firebase Hosting holt
+# sich nichts von selbst. Deshalb ist dieser Workflow ab jetzt der Weg, auf
+# dem Aenderungen live gehen: bearbeiten, committen, pushen, fertig.
+#
+# Das Secret FIREBASE_SERVICE_ACCOUNT_LIEGESTUTZEN muss in den
+# Repository-Einstellungen hinterlegt sein (Settings -> Secrets and
+# variables -> Actions). Ohne das Secret schlaegt der Deploy-Schritt fehl,
+# die Pruefungen davor laufen trotzdem.
+name: Firebase Hosting
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Erst pruefen, dann ausliefern - eine kaputte logic.js soll nicht
+      # live gehen, nur weil der Push durchging.
+      - name: Syntax pruefen
+        run: |
+          for f in $(git ls-files '*.js' '*.mjs'); do
+            node --check "$f"
+          done
+
+      - name: Tests
+        run: node --test logic.test.mjs
+
+      # Nur der echte Stand von main geht live. Pull Requests laufen bis
+      # hierher und hoeren dann auf; eine Vorschau braeuchte zusaetzliche
+      # Rechte, die ein fremder Fork nicht bekommen soll.
+      - name: Deploy
+        if: github.event_name != 'pull_request'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LIEGESTUTZEN }}
+          projectId: liegestutzen
+          channelId: live
