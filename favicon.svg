@@ -5,7 +5,7 @@
     - kein Neuzeichnen, kein Rekonstruieren aus dem Gedaechtnis.
   -->
   <rect width="108" height="108" rx="24" fill="#F7F7F7"/>
-  <path d="M54,24 A30,30 0 1,1 53.9,24" fill="none" stroke="#111111" stroke-width="2.6"/>
+  <path d="M24,54 A30,30 0 1,1 84,54 A30,30 0 1,1 24,54" fill="none" stroke="#111111" stroke-width="2.6"/>
   <path d="M34,64 L67,43" fill="none" stroke="#111111" stroke-width="8.5"/>
   <path d="M67,43 A6.5,6.5 0 0,1 67,56 L61,56" fill="none" stroke="#111111" stroke-width="7" stroke-linejoin="round"/>
   <path d="M62,54 L58,66" fill="none" stroke="#111111" stroke-width="6.5"/>
