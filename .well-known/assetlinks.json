@@ -7,7 +7,8 @@
       "namespace": "android_app",
       "package_name": "de.liegestuetzen.trainer",
       "sha256_cert_fingerprints": [
-        "EC:B3:1C:39:7C:28:AA:FB:7F:65:6E:88:95:7D:A0:8A:CE:D9:12:DB:86:AD:8B:BB:C2:69:93:DC:00:70:6B:6C"
+        "EC:B3:1C:39:7C:28:AA:FB:7F:65:6E:88:95:7D:A0:8A:CE:D9:12:DB:86:AD:8B:BB:C2:69:93:DC:00:70:6B:6C",
+        "F2:60:48:E7:F0:A4:4E:E6:E6:7E:64:5A:24:B1:AA:54:FC:35:75:A8:B8:E8:3D:09:8B:4D:0D:C4:18:0B:92:A1"
       ]
     }
   }
