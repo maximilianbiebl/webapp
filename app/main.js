@@ -141,12 +141,33 @@ $("guestBtn").addEventListener("click", () => {
   start();
 });
 
+/*
+ * Codes, hinter denen kein Fehler steckt, sondern eine Entscheidung: Wer das
+ * Google-Fenster zumacht, hat sich gegen die Anmeldung entschieden und
+ * braucht dafuer keine rote Zeile. Der zweite Code kommt, wenn ein zweiter
+ * Klick das erste Fenster ersetzt - auch das ist kein Fehlschlag.
+ */
+const SIGN_IN_ABBRUCH = new Set([
+  "auth/popup-closed-by-user",
+  "auth/cancelled-popup-request",
+  "auth/user-cancelled",
+]);
+
 async function signInWithGoogle() {
+  const box = $("signInError");
+  // Eine Meldung vom letzten Versuch darf nicht ueber dem neuen stehen
+  // bleiben - sonst sieht ein geglueckter Anlauf aus wie ein gescheiterter.
+  show(box, false);
   try {
     await signInWithPopup(fb.auth, new GoogleAuthProvider());
   } catch (error) {
-    const box = $("signInError");
-    box.textContent = t("signInFailed", error.code || error.message);
+    const code = error.code || "";
+    if (SIGN_IN_ABBRUCH.has(code)) return;
+    // "Anmeldung fehlgeschlagen: auth/popup-blocked" sagt niemandem, was zu
+    // tun ist. Der Fall hat als einziger eine Abhilfe, die der Nutzer kennt.
+    box.textContent = code === "auth/popup-blocked"
+      ? t("signInPopupBlocked")
+      : t("signInFailed", code || error.message);
     show(box, true);
   }
 }

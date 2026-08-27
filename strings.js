@@ -64,6 +64,8 @@ const STRINGS = {
     signInBackHome: "Zur Startseite",
     signInInviteHint: "Du hast eine Einladung dabei. Melde dich an, dann wird sie gleich eingelöst.",
     signInFailed: (reason) => `Anmeldung fehlgeschlagen: ${reason}`,
+    signInPopupBlocked:
+      "Der Browser hat das Anmeldefenster blockiert. Erlaube Pop-ups für diese Seite und versuch es noch einmal.",
 
     // Reiter und obere Leiste
     tabTraining: "Training",
@@ -292,6 +294,8 @@ const STRINGS = {
     signInBackHome: "Back to the homepage",
     signInInviteHint: "You brought an invitation along. Sign in and it will be redeemed right away.",
     signInFailed: (reason) => `Sign-in failed: ${reason}`,
+    signInPopupBlocked:
+      "Your browser blocked the sign-in window. Allow pop-ups for this site and try again.",
 
     tabTraining: "Training",
     tabFriends: "Friends",
