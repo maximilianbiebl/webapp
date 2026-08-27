@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Liegestütze – Web</title>
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../style.css">
@@ -51,7 +51,7 @@
   <header class="topbar">
     <button class="iconbtn hidden" id="backBtn" data-i18n="backBtn">Zurück</button>
     <h1 id="topTitle">Training</h1>
-    <button class="iconbtn" id="accountBtn" data-i18n="settingsBtn" data-i18n-attr="aria-label">Einstellungen</button>
+    <button class="iconbtn round" id="accountBtn" data-i18n="settingsBtn" data-i18n-attr="aria-label" aria-label="Einstellungen"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19.14 12.94a7.07 7.07 0 0 0 0-1.88l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.24-1.13.55-1.62.94l-2.39-.96a.5.5 0 0 0-.6.22L2.67 8.84a.5.5 0 0 0 .12.64l2.03 1.58a7.07 7.07 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.39 1.04.7 1.62.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.58-.24 1.12-.55 1.62-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg></button>
   </header>
 
   <main class="tabmain">
@@ -72,12 +72,17 @@
         <button class="ghost wide" id="allLevels" data-i18n="allLevelsBtn">Alle Level ansehen</button>
       </div>
 
+      <!-- Das Ziel steht fuer sich, wie in der App: eine Zahl, ein Balken, sonst
+           nichts. Zusammen mit den Zahlen in einer Karte ging es unter. -->
+      <div class="card stack">
+        <p class="muted" id="goalLine"></p>
+        <div class="bar"><div id="goalBar" style="width:0%"></div></div>
+      </div>
+
       <div class="card stack">
         <h2 data-i18n="yourNumbers">Deine Zahlen</h2>
         <div class="tiles" id="quickTiles"></div>
         <p class="muted" id="testLine"></p>
-        <p class="muted" id="goalLine"></p>
-        <div class="bar"><div id="goalBar" style="width:0%"></div></div>
         <button class="ghost wide" id="toHistory" data-i18n="toHistory">Ganzen Verlauf ansehen</button>
       </div>
     </section>

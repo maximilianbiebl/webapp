@@ -306,26 +306,48 @@ input[type="range"]::-moz-range-thumb {
 #workout {
   position: fixed;
   inset: 0;
+  /*
+   * 100dvh statt der Hoehe aus `inset: 0`: Auf dem Handy waechst und
+   * schrumpft die Adressleiste, und die feste Hoehe rechnet mit dem groessten
+   * Fall. Der Zaehler wurde dadurch zusammengedrueckt und die Knopfreihe
+   * rutschte unter den sichtbaren Rand. dvh misst, was gerade wirklich da ist.
+   */
+  height: 100dvh;
   z-index: 50;
   display: none;
   flex-direction: column;
   background: var(--bg);
   color: var(--ink);
   padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
   text-align: center;
   user-select: none;
   -webkit-user-select: none;
 }
 #workout.open { display: flex; }
 #workout.hot { background: var(--accent); color: var(--accent-contrast); }
+/*
+ * Die Pause hebt sich ab, wie in der App der secondaryContainer. Ohne das
+ * sieht ein Bildschirm, auf dem nichts zu tun ist, aus wie einer, auf dem
+ * gezaehlt wird.
+ */
+#workout.resting { background: var(--card); }
+
+/* Leere Zeilen sollen keinen Platz belegen - in der Pause steht kein Hinweis. */
+#workout .setline:empty { display: none; }
 
 #workout .whead { display: flex; flex-direction: column; gap: 8px; padding-bottom: 8px; }
+/* In der Pause traegt der Kopf nichts bei und verschwindet ganz. */
+#workout .whead.bare > #wLevel,
+#workout .whead.bare > .setpills { display: none; }
+/* Die Ankuendigung am Ende der Pause hebt sich ab, wie primary in der App. */
+#workout .setline.ready { color: var(--accent); opacity: 1; font-weight: 600; }
 #workout .setpills span { background: rgba(128, 128, 128, 0.18); }
 #workout.hot .setpills span { background: rgba(0, 0, 0, 0.12); color: var(--accent-contrast); }
 #workout.hot .setpills span.done { background: var(--accent-contrast); color: var(--accent); }
 #workout.hot .setpills span.active { outline-color: var(--accent-contrast); }
-#workout #wNote { min-height: 1.3em; }
-#workout #wHint { opacity: 0.85; min-height: 1.3em; }
+#workout #wHint { opacity: 0.85; }
 #workout .wadjust { justify-content: center; gap: 12px; padding-bottom: 4px; }
 #workout.hot .wadjust .chip { border-color: var(--accent-contrast); color: var(--accent-contrast); }
 
@@ -341,8 +363,17 @@ input[type="range"]::-moz-range-thumb {
 #workout .count { font-size: clamp(4rem, 30vw, 10rem); font-weight: 800; line-height: 1; }
 #workout .of { font-size: 1.1rem; opacity: 0.75; }
 #workout .setline { font-size: 0.95rem; opacity: 0.8; }
-#workout .controls { display: flex; gap: 8px; padding-bottom: 8px; }
+#workout .controls { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 8px; }
 #workout .controls button { flex: 1; }
+/*
+ * In der Pause stehen drei Knoepfe nebeneinander, und "Hier beenden" bricht
+ * dabei um. Die App stellt "Weiter" heraus und laesst das Beenden darunter
+ * leiser stehen - hier dasselbe, ohne dass eine Moeglichkeit wegfaellt:
+ * "Weiter" nimmt eine eigene Zeile darueber, die beiden stillen teilen sich
+ * die darunter.
+ */
+#workout.resting .controls #wNext { flex: 1 0 100%; order: -1; }
+#workout.resting .controls .ghost { font-size: 0.9rem; }
 #workout.hot button { border-color: var(--accent-contrast); color: var(--accent-contrast); }
 #workout.hot button:not(.ghost) { background: var(--accent-contrast); color: var(--accent); }
 
@@ -402,6 +433,17 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
 }
 .iconbtn:hover { background: rgba(128, 128, 128, 0.15); }
+/* Symbolknopf ohne Beschriftung: quadratisch statt in die Breite gezogen. */
+.iconbtn.round {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: var(--muted);
+}
+.iconbtn.round:hover { color: var(--ink); }
 
 .tabmain { flex: 1; max-width: 680px; width: 100%; margin: 0 auto; padding: 16px; padding-bottom: 32px; }
 .tabpanel.hidden { display: none; }

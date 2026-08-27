@@ -29,6 +29,16 @@ const MIN_REP_INTERVAL_MS = 400;
 /** Um so viele Sekunden verlaengert "+30 s" die Pause - derselbe Wert wie addRestSeconds(30) in der App. */
 const REST_EXTEND_SECONDS = 30;
 
+/**
+ * Vorwarnung am Ende der Pause, in Sekunden - derselbe Wert wie
+ * REST_READY_HINT_SECONDS in der App.
+ *
+ * Nach der Pause geht es ohne Tastendruck weiter. Ohne Ankuendigung begaenne
+ * die Zaehlung also unvermittelt, und die ersten Wiederholungen gingen
+ * verloren, weil man noch nicht unten liegt.
+ */
+const REST_READY_HINT_SECONDS = 5;
+
 /** Die Phasen, in denen ein Training sein kann. */
 const PREPARE = "prepare";
 const SET = "set";
@@ -56,6 +66,7 @@ export function runWorkout(level, restSeconds = 90) {
 
     const screen = $("workout");
     const els = {
+      head: document.querySelector("#workout .whead"),
       level: $("wLevel"),
       pills: $("wPills"),
       set: $("wSet"),
@@ -108,8 +119,13 @@ export function runWorkout(level, restSeconds = 90) {
       drawPills();
       els.adjust.classList.toggle("hidden", phase !== SET);
       els.restAdjust.classList.toggle("hidden", phase !== REST);
+      // In der Pause bleibt der Kopf leer, wie in der App: Level und Satzperlen
+      // sagen dort nichts, was gerade zaehlt, und draengen die Zahl zusammen.
+      els.head.classList.toggle("bare", phase === REST);
+      screen.classList.toggle("resting", phase === REST);
 
       if (phase === PREPARE) {
+        els.set.classList.remove("ready");
         els.set.textContent = t("workoutPrepareSet");
         els.count.textContent = String(secondsLeft);
         els.of.textContent = t("workoutPrepareUnit");
@@ -122,12 +138,15 @@ export function runWorkout(level, restSeconds = 90) {
       }
 
       if (phase === REST) {
-        const done = actual.reduce((sum, n) => sum + n, 0);
-        els.set.textContent = t("workoutRestSet", actual.length, planned.length);
+        // Kurz vor Schluss kuendigt die Ueberschrift an, dass es gleich von
+        // selbst weitergeht - genau wie restIsEnding in der App.
+        const gleichSoweit = secondsLeft > 0 && secondsLeft <= REST_READY_HINT_SECONDS;
+        els.set.textContent = gleichSoweit ? t("workoutGetReady") : t("workoutRest");
+        els.set.classList.toggle("ready", gleichSoweit);
         els.count.textContent = String(secondsLeft);
         els.of.textContent = t("workoutRestUnit");
         els.hint.textContent = "";
-        els.note.textContent = t("workoutNextSet", planned[setIndex], done);
+        els.note.textContent = t("workoutNextSet", setIndex + 1, planned[setIndex]);
         els.next.textContent = t("workoutSkipRest");
         els.stop.classList.remove("hidden");
         screen.classList.remove("hot");
@@ -136,6 +155,7 @@ export function runWorkout(level, restSeconds = 90) {
 
       // SET: dieselbe Formulierung wie "Ziel: %d" in der App.
       const remaining = planned.slice(setIndex + 1);
+      els.set.classList.remove("ready");
       els.set.textContent = t("workoutSetOf", setIndex + 1, planned.length);
       els.count.textContent = String(count);
       els.of.textContent = t("workoutTargetOf", planned[setIndex]);
@@ -148,6 +168,24 @@ export function runWorkout(level, restSeconds = 90) {
       // Ab dem Ziel färbt sich der Bildschirm. Man sieht es aus dem Augenwinkel,
       // ohne die Zahl lesen zu müssen.
       screen.classList.toggle("hot", count >= planned[setIndex]);
+    };
+
+    /*
+     * Vollbild fuer die Dauer des Trainings - das Gegenstueck zum Bildschirm,
+     * den die App fuer sich allein hat. Scheitert es, laeuft alles weiter: Auf
+     * iOS gibt es die Schnittstelle fuer normale Elemente nicht, und dort
+     * traegt allein die dvh-Hoehe im Stylesheet.
+     */
+    const enterFullscreen = () => {
+      const el = document.documentElement;
+      if (document.fullscreenElement || typeof el.requestFullscreen !== "function") return;
+      // Promise.resolve, weil aeltere Umsetzungen nichts zurueckgeben - ein
+      // .catch direkt am Aufruf wuerde dort ueber undefined stolpern.
+      Promise.resolve(el.requestFullscreen({ navigationUI: "hide" })).catch(() => {});
+    };
+    const leaveFullscreen = () => {
+      if (!document.fullscreenElement || typeof document.exitFullscreen !== "function") return;
+      Promise.resolve(document.exitFullscreen()).catch(() => {});
     };
 
     const releaseWakeLock = () => {
@@ -180,8 +218,9 @@ export function runWorkout(level, restSeconds = 90) {
     const finish = (keepProgress) => {
       stopTicker();
       releaseWakeLock();
+      leaveFullscreen();
       document.removeEventListener("visibilitychange", onVisible);
-      screen.classList.remove("open", "hot");
+      screen.classList.remove("open", "hot", "resting");
       els.tap.removeEventListener("click", tap);
       els.minus.removeEventListener("click", onMinus);
       els.plus.removeEventListener("click", onPlus);
@@ -316,6 +355,7 @@ export function runWorkout(level, restSeconds = 90) {
     els.abort.addEventListener("click", onAbort);
 
     screen.classList.add("open");
+    enterFullscreen();
     acquireWakeLock();
     countdown(PREPARE_SECONDS, beginSet);
   });
