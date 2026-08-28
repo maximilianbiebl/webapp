@@ -25,6 +25,47 @@ const STRINGS = {
   de: {
     // Start- und Anmeldeseite
     brand: "Liegestütze",
+    betaTitle: "Zum Betatest anmelden",
+    betaIntro:
+      "Beide Fassungen laufen gerade in einer geschlossenen Testphase. Der " +
+      "Play-Store zeigt sie nur, wenn deine Adresse vorher freigeschaltet ist \u2013 " +
+      "deshalb siehst du hier, worum es geht.",
+    betaFreeTitle: "Liegestütze Free",
+    betaFreeBody:
+      "Der ganze Trainingsplan über 40 Level, Verlauf und Widgets. Ohne Konto, " +
+      "ohne Internet \u2013 nichts verlässt dein Gerät.",
+    betaPaidTitle: "Liegestütze",
+    betaPaidBody:
+      "Alles aus der Gratisfassung, dazu Konto, Gruppen und Freunde \u2013 mit " +
+      "gemeinsamer Bestenliste und Direktvergleich.",
+    betaAltLevel: "Der Trainingsplan mit den fünf Sätzen des Levels",
+    betaAltTraining: "Ein laufender Satz mit großer Zählanzeige",
+    betaAltWidgets: "Widgets auf dem Startbildschirm",
+    betaAltGroup: "Die gemeinsame Bestenliste einer Gruppe",
+    betaWhich: "Wofür möchtest du dich anmelden?",
+    betaFreeLabel: "Liegestütze Free",
+    betaPaidLabel: "Liegestütze (mit Gruppen und Freunden)",
+    betaMailLabel: "Deine Google-Adresse",
+    betaMailPlaceholder: "name@gmail.com",
+    betaMailHint:
+      "Es muss die Adresse sein, mit der du im Play-Store angemeldet bist \u2013 " +
+      "eine andere kann Google nicht freischalten.",
+    betaSubmit: "Anmeldung schreiben",
+    betaPrivacy:
+      "Der Knopf öffnet dein Mailprogramm. Diese Seite speichert nichts und " +
+      "sendet nichts \u2013 die Nachricht schickst du selbst.",
+    betaNeedMail: "Bitte trag eine gültige Adresse ein.",
+    betaNeedVersion: "Wähl mindestens eine Fassung aus.",
+    betaMailSubject: "Betatest Liegestütze",
+    betaMailBody: (adresse, fassungen) =>
+      `Hallo,\n\nich möchte am Betatest teilnehmen.\n\n` +
+      `Google-Adresse: ${adresse}\nFassung: ${fassungen}\n\nViele Grüße`,
+    betaDoneBody:
+      "Danke! Sobald deine Adresse freigeschaltet ist, führen diese Links zum " +
+      "Testzugang. Vorher zeigt Google dort nur eine Fehlermeldung \u2013 das ist " +
+      "normal und heißt nicht, dass etwas schiefgegangen ist.",
+    betaLinkFree: "Testzugang: Liegestütze Free",
+    betaLinkPaid: "Testzugang: Liegestütze",
     homeHeading: "Vom ersten Satz bis zu hundert am Stück",
     homeLead: "Ein Trainingsplan über 40 Level – auf dem Handy oder im Browser.",
     homeMobileTitle: "Auf dem Handy",
@@ -257,6 +298,47 @@ const STRINGS = {
 
   en: {
     brand: "Push-Ups",
+    betaTitle: "Join the beta test",
+    betaIntro:
+      "Both versions are in a closed test right now. The Play Store only shows " +
+      "them once your address has been added \u2013 so here is what you would be " +
+      "signing up for.",
+    betaFreeTitle: "Push-Ups Free",
+    betaFreeBody:
+      "The full 40-level training plan, history and widgets. No account, no " +
+      "internet \u2013 nothing leaves your device.",
+    betaPaidTitle: "Push-Ups",
+    betaPaidBody:
+      "Everything from the free version, plus an account, groups and friends \u2013 " +
+      "with a shared leaderboard and head-to-head comparison.",
+    betaAltLevel: "The training plan with the five sets of the level",
+    betaAltTraining: "A set in progress with a large counter",
+    betaAltWidgets: "Widgets on the home screen",
+    betaAltGroup: "A group's shared leaderboard",
+    betaWhich: "Which one would you like?",
+    betaFreeLabel: "Push-Ups Free",
+    betaPaidLabel: "Push-Ups (with groups and friends)",
+    betaMailLabel: "Your Google address",
+    betaMailPlaceholder: "name@gmail.com",
+    betaMailHint:
+      "It has to be the address you use in the Play Store \u2013 Google cannot " +
+      "grant access to any other one.",
+    betaSubmit: "Write the request",
+    betaPrivacy:
+      "The button opens your mail app. This page stores nothing and sends " +
+      "nothing \u2013 you send the message yourself.",
+    betaNeedMail: "Please enter a valid address.",
+    betaNeedVersion: "Pick at least one version.",
+    betaMailSubject: "Push-Ups beta test",
+    betaMailBody: (adresse, fassungen) =>
+      `Hello,\n\nI would like to join the beta test.\n\n` +
+      `Google address: ${adresse}\nVersion: ${fassungen}\n\nBest regards`,
+    betaDoneBody:
+      "Thank you. Once your address has been added, these links lead to the " +
+      "test. Before that Google only shows an error there \u2013 that is normal " +
+      "and does not mean anything went wrong.",
+    betaLinkFree: "Test access: Push-Ups Free",
+    betaLinkPaid: "Test access: Push-Ups",
     homeHeading: "From your first set to a hundred in a row",
     homeLead: "A 40-level training plan – on your phone or in the browser.",
     homeMobileTitle: "On your phone",

@@ -216,8 +216,23 @@ dialog {
 :root { color-scheme: dark; }
 dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
 dialog h2 { margin-bottom: 8px; }
-dialog .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
-dialog .actions button { padding: 10px 18px; }
+/*
+ * Die Knopfreihe darf umbrechen.
+ *
+ * Ohne das schob `flex-end` den Ueberlauf nach links aus dem Dialog heraus:
+ * Bei drei Knoepfen - Schliessen, Abmelden, Speichern - begann der erste bei
+ * x = -24, also ausserhalb des Bildschirms. Mit Umbruch rutscht die Hauptaktion
+ * auf eine eigene Zeile darueber, die stillen teilen sich die darunter; dasselbe
+ * Muster wie in der Pause des Trainings.
+ */
+dialog .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+dialog .actions button { padding: 10px 18px; flex: 1 1 auto; min-width: 0; }
 
 .hint {
   border-left: 3px solid var(--accent);
@@ -548,3 +563,54 @@ input[type="range"]::-moz-range-thumb {
 }
 .disclosure[open] > summary { margin-bottom: 8px; }
 .disclosure > p:last-child { margin-bottom: 0; }
+
+/*
+ * Der Betakasten auf der Startseite.
+ *
+ * Die Bildstreifen scrollen waagerecht statt zu schrumpfen: Drei
+ * Handyaufnahmen nebeneinander waeren auf einem Handy jede keine 100 px breit
+ * und damit unlesbar. So bleibt eine erkennbar und die naechste schaut hervor,
+ * was zum Weiterschieben einlaedt.
+ */
+.betaVersions { display: grid; gap: 20px; }
+@media (min-width: 620px) {
+  .betaVersions { grid-template-columns: 1fr 1fr; }
+}
+/*
+ * min-width: 0 ist hier keine Feinheit, sondern noetig.
+ *
+ * Raster- und Flexelemente stehen von Haus aus auf `min-width: auto` und
+ * wachsen deshalb mit ihrem Inhalt, statt ihn scrollen zu lassen. Ohne das war
+ * der Bildstreifen 470 px breit in einer 380 px schmalen Karte - und die ganze
+ * Startseite liess sich seitlich schieben.
+ */
+.betaVersion { min-width: 0; }
+.betaVersion h3 { margin: 0 0 4px; font-size: 1.05rem; }
+
+.betaShots {
+  display: flex;
+  min-width: 0;
+  gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 4px;
+  margin-top: 12px;
+}
+.betaShots img {
+  flex: 0 0 auto;
+  width: 150px;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  scroll-snap-align: start;
+}
+
+.betaCheck { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+.betaCheck input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+.betaMailLabel { display: block; margin: 16px 0 6px; font-size: 0.9rem; }
+#betaMail { width: 100%; }
+.betaHint { font-size: 0.8rem; margin: 8px 0 0; }
+.betaError { color: var(--danger); }
+#betaDone { margin-top: 16px; }
