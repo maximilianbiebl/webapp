@@ -100,7 +100,7 @@
       </div>
     </div>
 
-    <div class="card stack">
+    <div class="card stack" id="betaFormCard">
       <h2 data-i18n="betaFormTitle">Anmeldung</h2>
       <form id="betaForm" novalidate>
         <p class="muted" data-i18n="betaWhich">Wofür möchtest du dich anmelden?</p>
@@ -148,16 +148,32 @@
     <div class="card stack hidden" id="betaDone">
       <h2 data-i18n="betaDoneTitle">Angemeldet</h2>
       <p data-i18n="betaDoneBody">
-        Danke! Sobald deine Adresse freigeschaltet ist, führen diese Links zum
-        Testzugang. Vorher zeigt Google dort nur eine Fehlermeldung – das ist
-        normal und heißt nicht, dass etwas schiefgegangen ist.
+        Danke! Sobald deine Adresse freigeschaltet ist, geht es in zwei
+        Schritten weiter: erst die Teilnahme bestätigen, dann installieren.
+        Vorher zeigen beide Links nur eine Fehlermeldung – das ist normal und
+        heißt nicht, dass etwas schiefgegangen ist.
       </p>
-      <a class="button ghost wide" id="betaLinkFree" href="#" data-i18n="betaLinkFree">
-        Testzugang: Liegestütze Free
-      </a>
-      <a class="button ghost wide" id="betaLinkPaid" href="#" data-i18n="betaLinkPaid">
-        Testzugang: Liegestütze
-      </a>
+
+      <div class="betaSteps hidden" id="betaStepsFree">
+        <h3 data-i18n="betaFreeTitle">Liegestütze Free</h3>
+        <a class="button wide" id="betaAcceptFree" href="#" data-i18n="betaStepAccept">
+          1. Teilnahme bestätigen
+        </a>
+        <a class="button ghost wide" id="betaInstallFree" href="#" data-i18n="betaStepInstall">
+          2. Im Play Store öffnen
+        </a>
+      </div>
+
+      <div class="betaSteps hidden" id="betaStepsPaid">
+        <h3 data-i18n="betaPaidTitle">Liegestütze</h3>
+        <a class="button wide" id="betaAcceptPaid" href="#" data-i18n="betaStepAccept">
+          1. Teilnahme bestätigen
+        </a>
+        <a class="button ghost wide" id="betaInstallPaid" href="#" data-i18n="betaStepInstall">
+          2. Im Play Store öffnen
+        </a>
+      </div>
+
       <p class="muted betaHint" data-i18n="betaDoneContact">
         Sollte sich nach ein paar Tagen nichts tun, schreib mir kurz – die
         Adresse steht im Impressum.

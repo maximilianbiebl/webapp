@@ -609,6 +609,11 @@ input[type="range"]::-moz-range-thumb {
 
 .betaMailLabel { display: block; margin: 16px 0 6px; font-size: 0.9rem; }
 #betaMail { width: 100%; }
+/* Je Fassung ein Block mit zwei Schritten - der Abstand trennt sie sichtbar
+   voneinander, damit niemand die Reihenfolge quer liest. */
+.betaSteps { margin-top: 16px; }
+.betaSteps h3 { margin: 0 0 8px; font-size: 1rem; }
+.betaSteps .button + .button { margin-top: 8px; }
 .betaHint { font-size: 0.8rem; margin: 8px 0 0; }
 .betaError { color: var(--danger); }
 

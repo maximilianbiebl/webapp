@@ -21,9 +21,24 @@ import { t, getLanguage, resolveLanguage, wireLanguagePicker } from "./strings.j
  * -------------------------------------------------------------------------- */
 const BETA_LAEUFT = true;
 
-const OPT_IN = {
-  free: "https://play.google.com/apps/testing/de.liegestuetzen.trainer.free",
-  paid: "https://play.google.com/apps/testing/de.liegestuetzen.trainer",
+/*
+ * Je Fassung zwei Adressen, und die Reihenfolge zaehlt.
+ *
+ * `bestaetigen` ist die Einladung zum Test - erst wer sie annimmt, sieht den
+ * Eintrag ueberhaupt. `installieren` ist der gewoehnliche Store-Eintrag, der
+ * vorher eine Fehlermeldung zeigt. Beide zusammen, weil der eine ohne den
+ * anderen nicht weiterhilft: Bestaetigen allein installiert nichts, und der
+ * Store allein laesst niemanden hinein.
+ */
+const LINKS = {
+  free: {
+    bestaetigen: "https://play.google.com/apps/testing/de.liegestuetzen.trainer.free",
+    installieren: "https://play.google.com/store/apps/details?id=de.liegestuetzen.trainer.free",
+  },
+  paid: {
+    bestaetigen: "https://play.google.com/apps/testing/de.liegestuetzen.trainer",
+    installieren: "https://play.google.com/store/apps/details?id=de.liegestuetzen.trainer",
+  },
 };
 
 /* --------------------------------------------------------------------------
@@ -172,11 +187,15 @@ form.addEventListener("submit", async (ereignis) => {
     return zeigeFehler("betaFailed");
   }
 
-  document.getElementById("betaLinkFree").href = OPT_IN.free;
-  document.getElementById("betaLinkPaid").href = OPT_IN.paid;
-  document.getElementById("betaLinkFree").classList.toggle("hidden", !free);
-  document.getElementById("betaLinkPaid").classList.toggle("hidden", !paid);
-  form.classList.add("hidden");
+  for (const [fassung, gewaehlt] of [["Free", free], ["Paid", paid]]) {
+    const schluessel = fassung.toLowerCase();
+    document.getElementById(`betaAccept${fassung}`).href = LINKS[schluessel].bestaetigen;
+    document.getElementById(`betaInstall${fassung}`).href = LINKS[schluessel].installieren;
+    document.getElementById(`betaSteps${fassung}`).classList.toggle("hidden", !gewaehlt);
+  }
+  // Die ganze Karte, nicht nur das Formular - sonst bleibt ein leerer Rahmen
+  // mit der Ueberschrift "Anmeldung" ueber der Bestaetigung stehen.
+  document.getElementById("betaFormCard").classList.add("hidden");
   const fertig = document.getElementById("betaDone");
   fertig.classList.remove("hidden");
   fertig.scrollIntoView({ behavior: "smooth", block: "start" });

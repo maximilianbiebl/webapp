@@ -36,6 +36,8 @@ const STRINGS = {
     betaTapHint: "Zum Vergrößern antippen.",
     betaCloseImage: "Schließen",
     betaDoneTitle: "Angemeldet",
+    betaStepAccept: "1. Teilnahme bestätigen",
+    betaStepInstall: "2. Im Play Store öffnen",
     betaDoneContact:
       "Sollte sich nach ein paar Tagen nichts tun, schreib mir kurz \u2013 die " +
       "Adresse steht im Impressum.",
@@ -74,11 +76,10 @@ const STRINGS = {
     betaNeedMail: "Bitte trag eine gültige Adresse ein.",
     betaNeedVersion: "Wähl mindestens eine Fassung aus.",
     betaDoneBody:
-      "Danke! Sobald deine Adresse freigeschaltet ist, führen diese Links zum " +
-      "Testzugang. Vorher zeigt Google dort nur eine Fehlermeldung \u2013 das ist " +
-      "normal und heißt nicht, dass etwas schiefgegangen ist.",
-    betaLinkFree: "Testzugang: Liegestütze Free",
-    betaLinkPaid: "Testzugang: Liegestütze",
+      "Danke! Sobald deine Adresse freigeschaltet ist, geht es in zwei " +
+      "Schritten weiter: erst die Teilnahme bestätigen, dann installieren. " +
+      "Vorher zeigen beide Links nur eine Fehlermeldung \u2013 das ist normal und " +
+      "heißt nicht, dass etwas schiefgegangen ist.",
     homeHeading: "Vom ersten Satz bis zu hundert am Stück",
     homeLead: "Ein Trainingsplan über 40 Level – auf dem Handy oder im Browser.",
     homeMobileTitle: "Auf dem Handy",
@@ -322,6 +323,8 @@ const STRINGS = {
     betaTapHint: "Tap to enlarge.",
     betaCloseImage: "Close",
     betaDoneTitle: "You are signed up",
+    betaStepAccept: "1. Accept the invitation",
+    betaStepInstall: "2. Open in the Play Store",
     betaDoneContact:
       "If nothing happens within a few days, drop me a line \u2013 the address is " +
       "in the imprint.",
@@ -361,11 +364,9 @@ const STRINGS = {
     betaNeedMail: "Please enter a valid address.",
     betaNeedVersion: "Pick at least one version.",
     betaDoneBody:
-      "Thank you. Once your address has been added, these links lead to the " +
-      "test. Before that Google only shows an error there \u2013 that is normal " +
-      "and does not mean anything went wrong.",
-    betaLinkFree: "Test access: Push-Ups Free",
-    betaLinkPaid: "Test access: Push-Ups",
+      "Thank you. Once your address has been added, it takes two steps: first " +
+      "accept the invitation, then install. Before that both links only show " +
+      "an error \u2013 that is normal and does not mean anything went wrong.",
     homeHeading: "From your first set to a hundred in a row",
     homeLead: "A 40-level training plan – on your phone or in the browser.",
     homeMobileTitle: "On your phone",
