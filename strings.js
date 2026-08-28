@@ -36,6 +36,9 @@ const STRINGS = {
     betaTapHint: "Zum Vergrößern antippen.",
     betaCloseImage: "Schließen",
     betaDoneTitle: "Angemeldet",
+    betaDoneContact:
+      "Sollte sich nach ein paar Tagen nichts tun, schreib mir kurz \u2013 die " +
+      "Adresse steht im Impressum.",
     betaFailed: "Das hat gerade nicht geklappt. Versuch es später noch einmal.",
     betaOverTitle: "Der Betatest ist beendet",
     betaOverBody:
@@ -318,6 +321,9 @@ const STRINGS = {
     betaTapHint: "Tap to enlarge.",
     betaCloseImage: "Close",
     betaDoneTitle: "You are signed up",
+    betaDoneContact:
+      "If nothing happens within a few days, drop me a line \u2013 the address is " +
+      "in the imprint.",
     betaFailed: "That did not work just now. Please try again later.",
     betaOverTitle: "The beta test has ended",
     betaOverBody:
