@@ -143,11 +143,19 @@
         <button class="wide" type="submit" id="betaSubmit" data-i18n="betaSubmit">Anmelden</button>
         <p class="muted betaError hidden" id="betaError"></p>
       </form>
+      <!--
+        Wer sich schon angemeldet hat, kommt sonst nur wieder an die Links,
+        indem er das Formular ein zweites Mal absendet - und legt damit einen
+        doppelten Eintrag in der Liste an.
+      -->
+      <button type="button" class="linkbtn" id="betaAlready" data-i18n="betaAlready">
+        Schon angemeldet? Zu den Links
+      </button>
     </div>
 
     <div class="card stack hidden" id="betaDone">
-      <h2 data-i18n="betaDoneTitle">Angemeldet</h2>
-      <p data-i18n="betaDoneBody">
+      <h2 id="betaDoneTitle" data-i18n="betaDoneTitle">Angemeldet</h2>
+      <p id="betaDoneBody" data-i18n="betaDoneBody">
         Danke! Sobald deine Adresse freigeschaltet ist, geht es in zwei
         Schritten weiter: erst die Teilnahme bestätigen, dann installieren.
         Vorher zeigen beide Links nur eine Fehlermeldung – das ist normal und
@@ -175,9 +183,12 @@
       </div>
 
       <p class="muted betaHint" data-i18n="betaDoneContact">
-        Sollte sich nach ein paar Tagen nichts tun, schreib mir kurz – die
-        Adresse steht im Impressum.
+        Sollte sich nach ein paar Tagen nichts tun, schreib kurz eine Nachricht
+        an biebl.digital@gmail.com.
       </p>
+      <button type="button" class="linkbtn" id="betaAgain" data-i18n="betaAgain">
+        Doch noch einmal anmelden
+      </button>
     </div>
   </div>
 

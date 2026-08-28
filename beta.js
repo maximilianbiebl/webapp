@@ -125,10 +125,82 @@ lightbox.addEventListener("close", () => { lightboxImg.removeAttribute("src"); }
 const form = document.getElementById("betaForm");
 const fehler = document.getElementById("betaError");
 const knopf = document.getElementById("betaSubmit");
+const formularKarte = document.getElementById("betaFormCard");
+const fertig = document.getElementById("betaDone");
 
 function zeigeFehler(schluessel) {
   fehler.textContent = t(schluessel);
   fehler.classList.remove("hidden");
+}
+
+/*
+ * Was schon angemeldet wurde, merkt sich der Browser.
+ *
+ * Nicht um irgendetwas zu verfolgen, sondern damit man beim naechsten Aufruf
+ * gleich bei seinen Links landet statt beim Formular. Ohne das bliebe als
+ * einziger Weg zurueck, sich ein zweites Mal anzumelden - was einen doppelten
+ * Eintrag in der Liste hinterliesse.
+ *
+ * localStorage ist nicht verlaesslich: privates Fenster, geloeschte Daten,
+ * anderes Geraet. Deshalb ist der Knopf "Schon angemeldet?" der eigentliche
+ * Weg, und das Gedaechtnis nur die Abkuerzung.
+ */
+const SPEICHER = "liegestuetzen.beta.angemeldet";
+
+function merke(fassungen) {
+  try {
+    localStorage.setItem(SPEICHER, JSON.stringify(fassungen));
+  } catch {
+    // Gesperrter Speicher - dann eben ohne Abkuerzung.
+  }
+}
+
+function gemerkt() {
+  try {
+    const roh = localStorage.getItem(SPEICHER);
+    const liste = roh ? JSON.parse(roh) : null;
+    return Array.isArray(liste) && liste.length ? liste : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Zeigt die Links; `frisch` unterscheidet die eben erfolgte Anmeldung vom Nachschlagen. */
+function zeigeLinks(fassungen, frisch) {
+  for (const [name, schluessel] of [["Free", "free"], ["Paid", "paid"]]) {
+    const dabei = fassungen.includes(schluessel);
+    document.getElementById(`betaAccept${name}`).href = LINKS[schluessel].bestaetigen;
+    document.getElementById(`betaInstall${name}`).href = LINKS[schluessel].installieren;
+    document.getElementById(`betaSteps${name}`).classList.toggle("hidden", !dabei);
+  }
+  document.getElementById("betaDoneTitle").textContent =
+    t(frisch ? "betaDoneTitle" : "betaLinksTitle");
+  document.getElementById("betaDoneBody").textContent =
+    t(frisch ? "betaDoneBody" : "betaLinksBody");
+  // Die Ueberschriften stehen jetzt fest gesetzt da - ein Sprachwechsel darf
+  // sie nicht wieder auf den Ausgangstext zurueckdrehen.
+  document.getElementById("betaDoneTitle").dataset.i18n = frisch ? "betaDoneTitle" : "betaLinksTitle";
+  document.getElementById("betaDoneBody").dataset.i18n = frisch ? "betaDoneBody" : "betaLinksBody";
+  formularKarte.classList.add("hidden");
+  fertig.classList.remove("hidden");
+}
+
+document.getElementById("betaAlready").addEventListener("click", () => {
+  // Ohne Gedaechtnis ist nicht bekannt, welche Fassung gewaehlt wurde - dann
+  // beide zeigen, das ist hilfreicher als nachzufragen.
+  zeigeLinks(gemerkt() ?? ["free", "paid"], false);
+  fertig.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+document.getElementById("betaAgain").addEventListener("click", () => {
+  fertig.classList.add("hidden");
+  formularKarte.classList.remove("hidden");
+  formularKarte.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+if (BETA_LAEUFT) {
+  const frueher = gemerkt();
+  if (frueher) zeigeLinks(frueher, false);
 }
 
 form.addEventListener("submit", async (ereignis) => {
@@ -187,16 +259,8 @@ form.addEventListener("submit", async (ereignis) => {
     return zeigeFehler("betaFailed");
   }
 
-  for (const [fassung, gewaehlt] of [["Free", free], ["Paid", paid]]) {
-    const schluessel = fassung.toLowerCase();
-    document.getElementById(`betaAccept${fassung}`).href = LINKS[schluessel].bestaetigen;
-    document.getElementById(`betaInstall${fassung}`).href = LINKS[schluessel].installieren;
-    document.getElementById(`betaSteps${fassung}`).classList.toggle("hidden", !gewaehlt);
-  }
-  // Die ganze Karte, nicht nur das Formular - sonst bleibt ein leerer Rahmen
-  // mit der Ueberschrift "Anmeldung" ueber der Bestaetigung stehen.
-  document.getElementById("betaFormCard").classList.add("hidden");
-  const fertig = document.getElementById("betaDone");
-  fertig.classList.remove("hidden");
+  const fassungen = [free && "free", paid && "paid"].filter(Boolean);
+  merke(fassungen);
+  zeigeLinks(fassungen, true);
   fertig.scrollIntoView({ behavior: "smooth", block: "start" });
 });

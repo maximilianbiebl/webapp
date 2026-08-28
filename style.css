@@ -614,6 +614,23 @@ input[type="range"]::-moz-range-thumb {
 .betaSteps { margin-top: 16px; }
 .betaSteps h3 { margin: 0 0 8px; font-size: 1rem; }
 .betaSteps .button + .button { margin-top: 8px; }
+
+/* Ein Knopf, der wie ein Verweis aussieht: Er fuehrt nur woanders hin und
+   soll neben der Hauptaktion nicht um Aufmerksamkeit ringen. */
+.linkbtn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.linkbtn:hover { color: var(--ink); }
 .betaHint { font-size: 0.8rem; margin: 8px 0 0; }
 .betaError { color: var(--danger); }
 

@@ -39,8 +39,8 @@ const STRINGS = {
     betaStepAccept: "1. Teilnahme bestätigen",
     betaStepInstall: "2. Im Play Store öffnen",
     betaDoneContact:
-      "Sollte sich nach ein paar Tagen nichts tun, schreib mir kurz \u2013 die " +
-      "Adresse steht im Impressum.",
+      "Sollte sich nach ein paar Tagen nichts tun, schreib kurz eine Nachricht " +
+      "an biebl.digital@gmail.com.",
     betaFailed: "Das hat gerade nicht geklappt. Versuch es später noch einmal.",
     betaOverTitle: "Der Betatest ist beendet",
     betaOverBody:
@@ -72,7 +72,14 @@ const STRINGS = {
       "Google Play Console eingetragen wird. Widerruf jederzeit formlos möglich.",
     betaConsentLink: "Mehr dazu",
     betaNeedConsent: "Ohne diese Einwilligung kann ich dich nicht freischalten.",
-    betaSubmit: "Anmeldung schreiben",
+    betaSubmit: "Anmelden",
+    betaAlready: "Schon angemeldet? Zu den Links",
+    betaAgain: "Doch noch einmal anmelden",
+    betaLinksTitle: "Deine Links zum Test",
+    betaLinksBody:
+      "Erst die Teilnahme bestätigen, dann installieren. Solange deine Adresse " +
+      "nicht freigeschaltet ist, zeigen beide Links eine Fehlermeldung \u2013 das " +
+      "ist normal.",
     betaNeedMail: "Bitte trag eine gültige Adresse ein.",
     betaNeedVersion: "Wähl mindestens eine Fassung aus.",
     betaDoneBody:
@@ -326,8 +333,8 @@ const STRINGS = {
     betaStepAccept: "1. Accept the invitation",
     betaStepInstall: "2. Open in the Play Store",
     betaDoneContact:
-      "If nothing happens within a few days, drop me a line \u2013 the address is " +
-      "in the imprint.",
+      "If nothing happens within a few days, send a short message to " +
+      "biebl.digital@gmail.com.",
     betaFailed: "That did not work just now. Please try again later.",
     betaOverTitle: "The beta test has ended",
     betaOverBody:
@@ -360,7 +367,13 @@ const STRINGS = {
       "purpose. I can withdraw this at any time, informally.",
     betaConsentLink: "More on this",
     betaNeedConsent: "Without this consent I cannot grant you access.",
-    betaSubmit: "Write the request",
+    betaSubmit: "Sign up",
+    betaAlready: "Already signed up? Go to the links",
+    betaAgain: "Sign up again anyway",
+    betaLinksTitle: "Your links to the test",
+    betaLinksBody:
+      "First accept the invitation, then install. As long as your address has " +
+      "not been added, both links show an error \u2013 that is normal.",
     betaNeedMail: "Please enter a valid address.",
     betaNeedVersion: "Pick at least one version.",
     betaDoneBody:
