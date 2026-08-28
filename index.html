@@ -21,102 +21,18 @@
 
 
   <!--
-    Betakasten. Die Apps stehen in der geschlossenen Testphase, ihre
-    Store-Eintraege sind also nicht oeffentlich - wer sich anmelden soll, kann
-    vorher nichts davon sehen. Deshalb stehen hier Bilder und eine kurze
-    Beschreibung beider Fassungen.
-
-    Die Adresse wird nirgends gespeichert: Der Knopf baut nur einen
-    mailto-Verweis und uebergibt an das Mailprogramm des Besuchers. Diese Seite
-    hat keinen Server, der etwas entgegennehmen koennte, und soll auch keinen
-    bekommen.
+    Kurzer Verweis statt des ganzen Kastens: Es wollen sich nicht alle
+    anmelden, und Bilder, Formular und Einwilligung dauerhaft aufzuklappen
+    draengt sie jedem auf. Die Einzelheiten stehen auf beta.html.
   -->
-  <div class="card stack" id="beta">
-    <h2 data-i18n="betaTitle">Zum Betatest anmelden</h2>
-    <p class="muted" data-i18n="betaIntro">
-      Beide Fassungen laufen gerade in einer geschlossenen Testphase. Der
-      Play-Store zeigt sie nur, wenn deine Adresse vorher freigeschaltet ist –
-      deshalb siehst du hier, worum es geht.
+  <div class="card stack hidden" id="betaTeaser">
+    <h2 data-i18n="betaTeaserTitle">Beide Apps sind gerade im Betatest</h2>
+    <p class="muted" data-i18n="betaTeaserBody">
+      Der Play-Store zeigt sie nur, wenn deine Adresse vorher freigeschaltet
+      ist. Auf der Betaseite siehst du, worum es geht, und kannst dich in
+      einem Schritt anmelden.
     </p>
-
-    <div class="betaVersions">
-      <div class="betaVersion">
-        <h3 data-i18n="betaFreeTitle">Liegestütze Free</h3>
-        <p class="muted" data-i18n="betaFreeBody">
-          Der ganze Trainingsplan über 40 Level, Verlauf und Widgets. Ohne
-          Konto, ohne Internet – nichts verlässt dein Gerät.
-        </p>
-        <div class="betaShots">
-          <img src="beta/free-level.webp" width="360" height="640" loading="lazy"
-               alt="Trainingsplan" data-i18n="betaAltLevel" data-i18n-attr="alt">
-          <img src="beta/free-training.webp" width="360" height="640" loading="lazy"
-               alt="Satz zählen" data-i18n="betaAltTraining" data-i18n-attr="alt">
-          <img src="beta/free-widgets.webp" width="360" height="640" loading="lazy"
-               alt="Widgets" data-i18n="betaAltWidgets" data-i18n-attr="alt">
-        </div>
-      </div>
-
-      <div class="betaVersion">
-        <h3 data-i18n="betaPaidTitle">Liegestütze</h3>
-        <p class="muted" data-i18n="betaPaidBody">
-          Alles aus der Gratisfassung, dazu Konto, Gruppen und Freunde – mit
-          gemeinsamer Bestenliste und Direktvergleich.
-        </p>
-        <div class="betaShots">
-          <img src="beta/paid-level.webp" width="360" height="640" loading="lazy"
-               alt="Trainingsplan" data-i18n="betaAltLevel" data-i18n-attr="alt">
-          <img src="beta/paid-gruppe.webp" width="360" height="640" loading="lazy"
-               alt="Gruppe" data-i18n="betaAltGroup" data-i18n-attr="alt">
-          <img src="beta/paid-widgets.webp" width="360" height="640" loading="lazy"
-               alt="Widgets" data-i18n="betaAltWidgets" data-i18n-attr="alt">
-        </div>
-      </div>
-    </div>
-
-    <form id="betaForm" novalidate>
-      <p class="muted" data-i18n="betaWhich">Wofür möchtest du dich anmelden?</p>
-      <label class="betaCheck">
-        <input type="checkbox" id="betaFree" checked>
-        <span data-i18n="betaFreeLabel">Liegestütze Free</span>
-      </label>
-      <label class="betaCheck">
-        <input type="checkbox" id="betaPaid">
-        <span data-i18n="betaPaidLabel">Liegestütze (mit Gruppen und Freunden)</span>
-      </label>
-
-      <label class="betaMailLabel" for="betaMail" data-i18n="betaMailLabel">
-        Deine Google-Adresse
-      </label>
-      <input type="email" id="betaMail" inputmode="email" autocomplete="email"
-             placeholder="name@gmail.com" data-i18n="betaMailPlaceholder"
-             data-i18n-attr="placeholder">
-      <p class="muted betaHint" data-i18n="betaMailHint">
-        Es muss die Adresse sein, mit der du im Play-Store angemeldet bist –
-        eine andere kann Google nicht freischalten.
-      </p>
-      <button class="wide" type="submit" data-i18n="betaSubmit">Anmeldung schreiben</button>
-      <p class="muted betaHint" data-i18n="betaPrivacy">
-        Der Knopf öffnet dein Mailprogramm. Diese Seite speichert nichts und
-        sendet nichts – die Nachricht schickst du selbst.
-      </p>
-      <p class="muted betaError hidden" id="betaError"></p>
-      <!-- Traeger fuer den mailto-Sprung; nie sichtbar, nie fokussierbar. -->
-      <a id="betaMailto" hidden aria-hidden="true" tabindex="-1"></a>
-    </form>
-
-    <div class="hidden stack" id="betaDone">
-      <p data-i18n="betaDoneBody">
-        Danke! Sobald deine Adresse freigeschaltet ist, führen diese Links zum
-        Testzugang. Vorher zeigt Google dort nur eine Fehlermeldung – das ist
-        normal und heißt nicht, dass etwas schiefgegangen ist.
-      </p>
-      <a class="button ghost wide" id="betaLinkFree" href="#" data-i18n="betaLinkFree">
-        Testzugang: Liegestütze Free
-      </a>
-      <a class="button ghost wide" id="betaLinkPaid" href="#" data-i18n="betaLinkPaid">
-        Testzugang: Liegestütze
-      </a>
-    </div>
+    <a class="button wide" href="beta.html" data-i18n="betaTeaserButton">Zum Betatest</a>
   </div>
 
   <div class="card stack">
@@ -167,70 +83,16 @@
   wireLanguagePicker(document.getElementById("langBtn"));
   applyTranslations();
 
-  /*
-   * Betaanmeldung.
+  /* ------------------------------------------------------------------------
+   * HIER ABSCHALTEN, wenn die Testphase vorbei ist.
    *
-   * Kein Server, keine Speicherung: Der Knopf baut einen mailto-Verweis und
-   * uebergibt an das Mailprogramm. Erst danach erscheinen die Play-Links -
-   * vorher waeren sie nur eine Fehlermeldung, weil die Adresse noch nicht
-   * hinterlegt ist.
-   *
-   * Die Adresse landet ausserdem im Text der Nachricht, nicht nur im Absender:
-   * Wer aus einem anderen Postfach schreibt als dem, mit dem er im Play-Store
-   * angemeldet ist, waere sonst nicht zuzuordnen.
-   */
-  const OPT_IN = {
-    free: "https://play.google.com/apps/testing/de.liegestuetzen.trainer.free",
-    paid: "https://play.google.com/apps/testing/de.liegestuetzen.trainer",
-  };
-  const EMPFAENGER = "biebl.digital@gmail.com";
-
-  const form = document.getElementById("betaForm");
-  const fehler = document.getElementById("betaError");
-  const fertig = document.getElementById("betaDone");
-
-  form.addEventListener("submit", (ereignis) => {
-    ereignis.preventDefault();
-    const adresse = document.getElementById("betaMail").value.trim();
-    const free = document.getElementById("betaFree").checked;
-    const paid = document.getElementById("betaPaid").checked;
-
-    // Die Pruefung ist absichtlich grob: Ob eine Adresse wirklich existiert,
-    // zeigt sich ohnehin erst beim Freischalten. Sie soll nur Tippfehler wie
-    // eine fehlende Klammeraffe abfangen.
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adresse)) {
-      fehler.textContent = t("betaNeedMail");
-      fehler.classList.remove("hidden");
-      return;
-    }
-    if (!free && !paid) {
-      fehler.textContent = t("betaNeedVersion");
-      fehler.classList.remove("hidden");
-      return;
-    }
-    fehler.classList.add("hidden");
-
-    const gewaehlt = [free && t("betaFreeLabel"), paid && t("betaPaidLabel")]
-      .filter(Boolean).join(" + ");
-    const ziel = `mailto:${EMPFAENGER}` +
-      `?subject=${encodeURIComponent(t("betaMailSubject"))}` +
-      `&body=${encodeURIComponent(t("betaMailBody", adresse, gewaehlt))}`;
-
-    document.getElementById("betaLinkFree").href = OPT_IN.free;
-    document.getElementById("betaLinkPaid").href = OPT_IN.paid;
-    document.getElementById("betaLinkFree").classList.toggle("hidden", !free);
-    document.getElementById("betaLinkPaid").classList.toggle("hidden", !paid);
-    fertig.classList.remove("hidden");
-    fertig.scrollIntoView({ behavior: "smooth", block: "nearest" });
-
-    // Ueber einen Verweis statt ueber window.location: Ein mailto-Sprung laesst
-    // die Seite dabei unangetastet stehen. Setzt man location.href, halten
-    // manche Browser die Seite fuer verlassen und raeumen sie ab - dann waeren
-    // die Links darunter gleich wieder weg.
-    const brief = document.getElementById("betaMailto");
-    brief.href = ziel;
-    brief.click();
-  });
+   * Derselbe Schalter steht in beta.html. `false` blendet den Verweis hier
+   * aus; die Betaseite zeigt dann statt des Formulars einen Hinweis, dass der
+   * Test beendet ist - wer den Verweis noch irgendwo gespeichert hat, laeuft
+   * also nicht ins Leere.
+   * ------------------------------------------------------------------------ */
+  const BETA_LAEUFT = true;
+  document.getElementById("betaTeaser").classList.toggle("hidden", !BETA_LAEUFT);
 </script>
 </body>
 </html>

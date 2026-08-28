@@ -565,28 +565,17 @@ input[type="range"]::-moz-range-thumb {
 .disclosure > p:last-child { margin-bottom: 0; }
 
 /*
- * Der Betakasten auf der Startseite.
+ * Die Betaseite.
  *
- * Die Bildstreifen scrollen waagerecht statt zu schrumpfen: Drei
- * Handyaufnahmen nebeneinander waeren auf einem Handy jede keine 100 px breit
- * und damit unlesbar. So bleibt eine erkennbar und die naechste schaut hervor,
- * was zum Weiterschieben einlaedt.
- */
-.betaVersions { display: grid; gap: 20px; }
-@media (min-width: 620px) {
-  .betaVersions { grid-template-columns: 1fr 1fr; }
-}
-/*
- * min-width: 0 ist hier keine Feinheit, sondern noetig.
+ * Die Bildstreifen scrollen waagerecht statt zu schrumpfen: Sieben Aufnahmen
+ * nebeneinander waeren auf einem Handy jede keine 50 px breit. So bleibt eine
+ * erkennbar und die naechste schaut hervor, was zum Weiterschieben einlaedt.
  *
- * Raster- und Flexelemente stehen von Haus aus auf `min-width: auto` und
- * wachsen deshalb mit ihrem Inhalt, statt ihn scrollen zu lassen. Ohne das war
- * der Bildstreifen 470 px breit in einer 380 px schmalen Karte - und die ganze
- * Startseite liess sich seitlich schieben.
+ * min-width: 0 ist hier keine Feinheit, sondern noetig. Flexelemente stehen
+ * von Haus aus auf `min-width: auto` und wachsen mit ihrem Inhalt, statt ihn
+ * scrollen zu lassen - sonst schiebt der Streifen die ganze Seite in die
+ * Breite.
  */
-.betaVersion { min-width: 0; }
-.betaVersion h3 { margin: 0 0 4px; font-size: 1.05rem; }
-
 .betaShots {
   display: flex;
   min-width: 0;
@@ -595,22 +584,63 @@ input[type="range"]::-moz-range-thumb {
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   padding-bottom: 4px;
-  margin-top: 12px;
+  margin-top: 4px;
 }
-.betaShots img {
+.betaShots .shot {
   flex: 0 0 auto;
-  width: 150px;
-  height: auto;
-  border-radius: 12px;
+  padding: 0;
   border: 1px solid var(--line);
+  border-radius: 12px;
+  background: none;
+  overflow: hidden;
+  cursor: zoom-in;
   scroll-snap-align: start;
+  line-height: 0;
 }
+.betaShots .shot img { width: 150px; height: auto; display: block; }
 
 .betaCheck { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
-.betaCheck input { width: 18px; height: 18px; accent-color: var(--accent); }
+.betaCheck input { width: 18px; height: 18px; accent-color: var(--accent); flex: 0 0 auto; }
+/* Die Einwilligung ist mehrzeilig - der Haken gehoert dann nach oben, nicht
+   auf die Mitte des Absatzes. */
+.betaConsent { align-items: flex-start; margin-top: 16px; }
+.betaConsent span { font-size: 0.85rem; color: var(--muted); }
+.betaConsent input { margin-top: 3px; }
 
 .betaMailLabel { display: block; margin: 16px 0 6px; font-size: 0.9rem; }
 #betaMail { width: 100%; }
 .betaHint { font-size: 0.8rem; margin: 8px 0 0; }
 .betaError { color: var(--danger); }
-#betaDone { margin-top: 16px; }
+
+/*
+ * Grossansicht.
+ *
+ * Randlos und so gross wie das Fenster hergibt: Ein Bildschirmfoto eines
+ * Handys in einem Kaestchen mit Rand anzuzeigen waere doppelt gerahmt. dvh,
+ * weil die Adressleiste auf dem Handy kommt und geht.
+ */
+.lightbox {
+  border: 0;
+  padding: 0;
+  background: none;
+  max-width: 100vw;
+  max-height: 100dvh;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+.lightbox::backdrop { background: rgba(0, 0, 0, 0.9); }
+.lightbox img {
+  display: block;
+  margin: auto;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 88px);
+  object-fit: contain;
+  border-radius: 12px;
+}
+.lightbox button {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom));
+}

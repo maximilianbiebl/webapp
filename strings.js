@@ -26,6 +26,21 @@ const STRINGS = {
     // Start- und Anmeldeseite
     brand: "Liegestütze",
     betaTitle: "Zum Betatest anmelden",
+    betaTeaserTitle: "Beide Apps sind gerade im Betatest",
+    betaTeaserBody:
+      "Der Play-Store zeigt sie nur, wenn deine Adresse vorher freigeschaltet " +
+      "ist. Auf der Betaseite siehst du, worum es geht, und kannst dich in " +
+      "einem Schritt anmelden.",
+    betaTeaserButton: "Zum Betatest",
+    betaFormTitle: "Anmeldung",
+    betaTapHint: "Zum Vergrößern antippen.",
+    betaCloseImage: "Schließen",
+    betaDoneTitle: "Angemeldet",
+    betaFailed: "Das hat gerade nicht geklappt. Versuch es später noch einmal.",
+    betaOverTitle: "Der Betatest ist beendet",
+    betaOverBody:
+      "Danke an alle, die mitgemacht haben. Die Apps sind jetzt regulär im " +
+      "Play-Store zu finden.",
     betaIntro:
       "Beide Fassungen laufen gerade in einer geschlossenen Testphase. Der " +
       "Play-Store zeigt sie nur, wenn deine Adresse vorher freigeschaltet ist \u2013 " +
@@ -38,10 +53,6 @@ const STRINGS = {
     betaPaidBody:
       "Alles aus der Gratisfassung, dazu Konto, Gruppen und Freunde \u2013 mit " +
       "gemeinsamer Bestenliste und Direktvergleich.",
-    betaAltLevel: "Der Trainingsplan mit den fünf Sätzen des Levels",
-    betaAltTraining: "Ein laufender Satz mit großer Zählanzeige",
-    betaAltWidgets: "Widgets auf dem Startbildschirm",
-    betaAltGroup: "Die gemeinsame Bestenliste einer Gruppe",
     betaWhich: "Wofür möchtest du dich anmelden?",
     betaFreeLabel: "Liegestütze Free",
     betaPaidLabel: "Liegestütze (mit Gruppen und Freunden)",
@@ -50,16 +61,15 @@ const STRINGS = {
     betaMailHint:
       "Es muss die Adresse sein, mit der du im Play-Store angemeldet bist \u2013 " +
       "eine andere kann Google nicht freischalten.",
+    betaConsentText:
+      "Ich bin damit einverstanden, dass meine Adresse gespeichert, zur " +
+      "Freischaltung des Betatests verwendet und dafür in die Testerliste der " +
+      "Google Play Console eingetragen wird. Widerruf jederzeit formlos möglich.",
+    betaConsentLink: "Mehr dazu",
+    betaNeedConsent: "Ohne diese Einwilligung kann ich dich nicht freischalten.",
     betaSubmit: "Anmeldung schreiben",
-    betaPrivacy:
-      "Der Knopf öffnet dein Mailprogramm. Diese Seite speichert nichts und " +
-      "sendet nichts \u2013 die Nachricht schickst du selbst.",
     betaNeedMail: "Bitte trag eine gültige Adresse ein.",
     betaNeedVersion: "Wähl mindestens eine Fassung aus.",
-    betaMailSubject: "Betatest Liegestütze",
-    betaMailBody: (adresse, fassungen) =>
-      `Hallo,\n\nich möchte am Betatest teilnehmen.\n\n` +
-      `Google-Adresse: ${adresse}\nFassung: ${fassungen}\n\nViele Grüße`,
     betaDoneBody:
       "Danke! Sobald deine Adresse freigeschaltet ist, führen diese Links zum " +
       "Testzugang. Vorher zeigt Google dort nur eine Fehlermeldung \u2013 das ist " +
@@ -299,6 +309,20 @@ const STRINGS = {
   en: {
     brand: "Push-Ups",
     betaTitle: "Join the beta test",
+    betaTeaserTitle: "Both apps are in a beta test right now",
+    betaTeaserBody:
+      "The Play Store only shows them once your address has been added. The " +
+      "beta page shows what they look like and lets you sign up in one step.",
+    betaTeaserButton: "To the beta test",
+    betaFormTitle: "Sign up",
+    betaTapHint: "Tap to enlarge.",
+    betaCloseImage: "Close",
+    betaDoneTitle: "You are signed up",
+    betaFailed: "That did not work just now. Please try again later.",
+    betaOverTitle: "The beta test has ended",
+    betaOverBody:
+      "Thank you to everyone who took part. Both apps are now in the Play " +
+      "Store for everyone.",
     betaIntro:
       "Both versions are in a closed test right now. The Play Store only shows " +
       "them once your address has been added \u2013 so here is what you would be " +
@@ -311,10 +335,6 @@ const STRINGS = {
     betaPaidBody:
       "Everything from the free version, plus an account, groups and friends \u2013 " +
       "with a shared leaderboard and head-to-head comparison.",
-    betaAltLevel: "The training plan with the five sets of the level",
-    betaAltTraining: "A set in progress with a large counter",
-    betaAltWidgets: "Widgets on the home screen",
-    betaAltGroup: "A group's shared leaderboard",
     betaWhich: "Which one would you like?",
     betaFreeLabel: "Push-Ups Free",
     betaPaidLabel: "Push-Ups (with groups and friends)",
@@ -323,16 +343,15 @@ const STRINGS = {
     betaMailHint:
       "It has to be the address you use in the Play Store \u2013 Google cannot " +
       "grant access to any other one.",
+    betaConsentText:
+      "I agree that my address may be stored, used to grant access to the beta " +
+      "test and added to the tester list in the Google Play Console for that " +
+      "purpose. I can withdraw this at any time, informally.",
+    betaConsentLink: "More on this",
+    betaNeedConsent: "Without this consent I cannot grant you access.",
     betaSubmit: "Write the request",
-    betaPrivacy:
-      "The button opens your mail app. This page stores nothing and sends " +
-      "nothing \u2013 you send the message yourself.",
     betaNeedMail: "Please enter a valid address.",
     betaNeedVersion: "Pick at least one version.",
-    betaMailSubject: "Push-Ups beta test",
-    betaMailBody: (adresse, fassungen) =>
-      `Hello,\n\nI would like to join the beta test.\n\n` +
-      `Google address: ${adresse}\nVersion: ${fassungen}\n\nBest regards`,
     betaDoneBody:
       "Thank you. Once your address has been added, these links lead to the " +
       "test. Before that Google only shows an error there \u2013 that is normal " +

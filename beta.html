@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Betatest – Liegestütze</title>
+<meta name="description" content="Anmeldung zum geschlossenen Betatest der Liegestütze-Apps.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="brand"><span class="dot"></span> <span data-i18n="brand">Liegestütze</span></div>
+  <button type="button" class="chip" id="langBtn">Sprache</button>
+</header>
+<main>
+  <h1 data-i18n="betaTitle">Zum Betatest anmelden</h1>
+  <p class="lead" data-i18n="betaIntro">
+    Beide Fassungen laufen gerade in einer geschlossenen Testphase. Der
+    Play-Store zeigt sie nur, wenn deine Adresse vorher freigeschaltet ist –
+    deshalb siehst du hier, worum es geht.
+  </p>
+
+  <!-- Wenn die Testphase vorbei ist, steht statt allem Folgenden nur das hier. -->
+  <div class="card stack hidden" id="betaOver">
+    <h2 data-i18n="betaOverTitle">Der Betatest ist beendet</h2>
+    <p class="muted" data-i18n="betaOverBody">
+      Danke an alle, die mitgemacht haben. Die Apps sind jetzt regulär im
+      Play-Store zu finden.
+    </p>
+    <a class="button ghost wide" href="./" data-i18n="signInBackHome">Zur Startseite</a>
+  </div>
+
+  <div id="betaLive">
+    <div class="card stack">
+      <h2 data-i18n="betaFreeTitle">Liegestütze Free</h2>
+      <p class="muted" data-i18n="betaFreeBody">
+        Der ganze Trainingsplan über 40 Level, Verlauf und Widgets. Ohne
+        Konto, ohne Internet – nichts verlässt dein Gerät.
+      </p>
+      <p class="muted betaHint" data-i18n="betaTapHint">Zum Vergrößern antippen.</p>
+      <div class="betaShots">
+        <button type="button" class="shot" data-full="beta/free-1-level.webp">
+          <img src="beta/free-1-level.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+        <button type="button" class="shot" data-full="beta/free-2-satz-starten.webp">
+          <img src="beta/free-2-satz-starten.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+        <button type="button" class="shot" data-full="beta/free-3-training.webp">
+          <img src="beta/free-3-training.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+        <button type="button" class="shot" data-full="beta/free-4-verlauf.webp">
+          <img src="beta/free-4-verlauf.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+        <button type="button" class="shot" data-full="beta/free-5-einstellungen-oben.webp">
+          <img src="beta/free-5-einstellungen-oben.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+        <button type="button" class="shot" data-full="beta/free-6-einstellungen.webp">
+          <img src="beta/free-6-einstellungen.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+        <button type="button" class="shot" data-full="beta/free-7-widgets.webp">
+          <img src="beta/free-7-widgets.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+      </div>
+    </div>
+
+    <div class="card stack">
+      <h2 data-i18n="betaPaidTitle">Liegestütze</h2>
+      <p class="muted" data-i18n="betaPaidBody">
+        Alles aus der Gratisfassung, dazu Konto, Gruppen und Freunde – mit
+        gemeinsamer Bestenliste und Direktvergleich.
+      </p>
+      <p class="muted betaHint" data-i18n="betaTapHint">Zum Vergrößern antippen.</p>
+      <div class="betaShots">
+        <button type="button" class="shot" data-full="beta/paid-1-level.webp">
+          <img src="beta/paid-1-level.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+        <button type="button" class="shot" data-full="beta/paid-2-satz-starten.webp">
+          <img src="beta/paid-2-satz-starten.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+        <button type="button" class="shot" data-full="beta/paid-3-training.webp">
+          <img src="beta/paid-3-training.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+        <button type="button" class="shot" data-full="beta/paid-4-verlauf.webp">
+          <img src="beta/paid-4-verlauf.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+        <button type="button" class="shot" data-full="beta/paid-5-gruppe.webp">
+          <img src="beta/paid-5-gruppe.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+        <button type="button" class="shot" data-full="beta/paid-6-freunde.webp">
+          <img src="beta/paid-6-freunde.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+        <button type="button" class="shot" data-full="beta/paid-7-einstellungen.webp">
+          <img src="beta/paid-7-einstellungen.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+        <button type="button" class="shot" data-full="beta/paid-8-widgets.webp">
+          <img src="beta/paid-8-widgets.webp" width="720" height="1280" loading="lazy" alt="">
+        </button>
+      </div>
+    </div>
+
+    <div class="card stack">
+      <h2 data-i18n="betaFormTitle">Anmeldung</h2>
+      <form id="betaForm" novalidate>
+        <p class="muted" data-i18n="betaWhich">Wofür möchtest du dich anmelden?</p>
+        <label class="betaCheck">
+          <input type="checkbox" id="betaFree" checked>
+          <span data-i18n="betaFreeLabel">Liegestütze Free</span>
+        </label>
+        <label class="betaCheck">
+          <input type="checkbox" id="betaPaid">
+          <span data-i18n="betaPaidLabel">Liegestütze (mit Gruppen und Freunden)</span>
+        </label>
+
+        <label class="betaMailLabel" for="betaMail" data-i18n="betaMailLabel">
+          Deine Google-Adresse
+        </label>
+        <input type="email" id="betaMail" inputmode="email" autocomplete="email"
+               placeholder="name@gmail.com" data-i18n="betaMailPlaceholder"
+               data-i18n-attr="placeholder">
+        <p class="muted betaHint" data-i18n="betaMailHint">
+          Es muss die Adresse sein, mit der du im Play-Store angemeldet bist –
+          eine andere kann Google nicht freischalten.
+        </p>
+
+        <label class="betaCheck betaConsent">
+          <input type="checkbox" id="betaConsent">
+          <!--
+            Text und Verweis stehen getrennt, weil data-i18n den Inhalt eines
+            Elements ersetzt: Stuende der Link darin, waere er nach der ersten
+            Uebersetzung weg.
+          -->
+          <span>
+            <span data-i18n="betaConsentText">Ich bin damit einverstanden, dass meine
+              Adresse gespeichert, zur Freischaltung des Betatests verwendet und
+              dafür in die Testerliste der Google Play Console eingetragen wird.
+              Widerruf jederzeit formlos möglich.</span>
+            <a href="datenschutz.html#beta" data-i18n="betaConsentLink">Mehr dazu</a>
+          </span>
+        </label>
+
+        <button class="wide" type="submit" id="betaSubmit" data-i18n="betaSubmit">Anmelden</button>
+        <p class="muted betaError hidden" id="betaError"></p>
+      </form>
+    </div>
+
+    <div class="card stack hidden" id="betaDone">
+      <h2 data-i18n="betaDoneTitle">Angemeldet</h2>
+      <p data-i18n="betaDoneBody">
+        Danke! Sobald deine Adresse freigeschaltet ist, führen diese Links zum
+        Testzugang. Vorher zeigt Google dort nur eine Fehlermeldung – das ist
+        normal und heißt nicht, dass etwas schiefgegangen ist.
+      </p>
+      <a class="button ghost wide" id="betaLinkFree" href="#" data-i18n="betaLinkFree">
+        Testzugang: Liegestütze Free
+      </a>
+      <a class="button ghost wide" id="betaLinkPaid" href="#" data-i18n="betaLinkPaid">
+        Testzugang: Liegestütze
+      </a>
+    </div>
+  </div>
+
+  <p class="muted">
+    <a href="./" data-i18n="signInBackHome">Zur Startseite</a> ·
+    <a href="datenschutz.html">Datenschutzerklärung</a> ·
+    <a href="impressum.html">Impressum</a>
+  </p>
+</main>
+
+<!-- Grossansicht. Ein natives dialog-Element: Escape und der Ruecken-Knopf des
+     Browsers schliessen es von selbst, ohne eigenen Code dafuer. -->
+<dialog id="lightbox" class="lightbox">
+  <img id="lightboxImg" alt="">
+  <button type="button" id="lightboxClose" class="chip" data-i18n="betaCloseImage">Schließen</button>
+</dialog>
+
+<script type="module" src="./beta.js"></script>
+</body>
+</html>
