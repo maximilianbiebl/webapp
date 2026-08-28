@@ -191,6 +191,16 @@ dialog {
   padding: 20px;
   max-width: 420px;
   width: calc(100% - 32px);
+  /*
+   * Sobald die Tastatur aufgeht, bleibt vom Fenster wenig uebrig. Der Dialog
+   * begrenzt sich darauf und scrollt notfalls in sich, statt mit Eingabefeld
+   * und Knoepfen unter die Tastatur zu rutschen. Zusammen mit
+   * interactive-widget=resizes-content in der Kopfzeile der Seite rueckt er
+   * mit hoch.
+   */
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 /* Sagt dem Browser, dass die Seite dunkel ist, damit er eingebaute Elemente
    (Formularfelder, Dialog-Backdrop) nicht in seinem hellen Standard zeichnet. */
@@ -324,15 +334,34 @@ input[type="range"]::-moz-range-thumb {
   text-align: center;
   user-select: none;
   -webkit-user-select: none;
+  /*
+   * Ohne das legt der Browser beim Tippen sein eigenes, blaeuliches Rechteck
+   * ueber die Flaeche. Auf einem Bildschirm, der sonst nur aus einer Zahl
+   * besteht, sieht das nach einem Fehler aus - und es ist ein Blau, das in
+   * dieser App sonst nirgends vorkommt. Die Rueckmeldung kommt aus der Zahl
+   * selbst und aus dem Farbwechsel am Ziel.
+   */
+  -webkit-tap-highlight-color: transparent;
 }
 #workout.open { display: flex; }
 #workout.hot { background: var(--accent); color: var(--accent-contrast); }
 /*
- * Die Pause hebt sich ab, wie in der App der secondaryContainer. Ohne das
- * sieht ein Bildschirm, auf dem nichts zu tun ist, aus wie einer, auf dem
- * gezaehlt wird.
+ * Die Pause hebt sich ab, wie in der App. Die beiden Werte sind nicht
+ * geschaetzt, sondern die, die Material dort tatsaechlich einsetzt:
+ * secondaryContainer und onSecondaryContainer des dunklen Schemas, also
+ * Secondary30 und Secondary90 der Palette. Ein blasses Grau reichte nicht -
+ * ein Bildschirm, auf dem nichts zu tun ist, soll auf den ersten Blick anders
+ * aussehen als einer, auf dem gezaehlt wird.
  */
-#workout.resting { background: var(--card); }
+#workout.resting {
+  background: #4a4458;
+  color: #e8def8;
+}
+/* Auf dem helleren Grund traegt die Linienfarbe des dunklen Designs nicht. */
+#workout.resting .chip,
+#workout.resting .ghost { border-color: rgba(232, 222, 248, 0.45); color: #e8def8; }
+#workout.resting .setline { color: #e8def8; }
+#workout.resting .setline.ready { color: #fff; }
 
 /* Leere Zeilen sollen keinen Platz belegen - in der Pause steht kein Hinweis. */
 #workout .setline:empty { display: none; }
@@ -405,7 +434,13 @@ input[type="range"]::-moz-range-thumb {
 #shell {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  /*
+   * dvh, nicht vh: 100vh rechnet auf dem Handy mit eingefahrener
+   * Adressleiste. Solange sie steht, ist die Huelle hoeher als das Sichtbare,
+   * und die unten klebende Reiterleiste liegt unter dem Rand - man musste erst
+   * ein Stueck scrollen, um an die Reiter zu kommen.
+   */
+  min-height: 100dvh;
 }
 
 .topbar {
@@ -434,6 +469,11 @@ input[type="range"]::-moz-range-thumb {
 }
 .iconbtn:hover { background: rgba(128, 128, 128, 0.15); }
 /* Symbolknopf ohne Beschriftung: quadratisch statt in die Breite gezogen. */
+/*
+ * Symbolknopf: nur das Zeichen, kein Ring. Der Rand von .iconbtn ist fuer
+ * beschriftete Knoepfe gedacht; um ein Zahnrad gezogen sieht er nach einem
+ * zweiten, leeren Element aus. In der App steht das Zahnrad ebenfalls frei.
+ */
 .iconbtn.round {
   display: inline-flex;
   align-items: center;
@@ -441,9 +481,11 @@ input[type="range"]::-moz-range-thumb {
   width: 40px;
   height: 40px;
   padding: 0;
-  color: var(--muted);
+  border: 0;
+  border-radius: 999px;
+  color: var(--ink);
 }
-.iconbtn.round:hover { color: var(--ink); }
+.iconbtn.round:hover { background: rgba(128, 128, 128, 0.15); }
 
 .tabmain { flex: 1; max-width: 680px; width: 100%; margin: 0 auto; padding: 16px; padding-bottom: 32px; }
 .tabpanel.hidden { display: none; }
