@@ -77,16 +77,17 @@ const STRINGS = {
     betaAgain: "Doch noch einmal anmelden",
     betaLinksTitle: "Deine Links zum Test",
     betaLinksBody:
-      "Erst die Teilnahme bestätigen, dann installieren. Solange deine Adresse " +
-      "nicht freigeschaltet ist, zeigen beide Links eine Fehlermeldung \u2013 das " +
-      "ist normal.",
+      "Erst die Teilnahme bestätigen, dann im Play Store öffnen und " +
+      "installieren. Solange deine Adresse nicht freigeschaltet ist, zeigen " +
+      "beide Links eine Fehlermeldung \u2013 das ist normal.",
     betaNeedMail: "Bitte trag eine gültige Adresse ein.",
     betaNeedVersion: "Wähl mindestens eine Fassung aus.",
     betaDoneBody:
       "Danke! Sobald deine Adresse freigeschaltet ist, geht es in zwei " +
-      "Schritten weiter: erst die Teilnahme bestätigen, dann installieren. " +
-      "Vorher zeigen beide Links nur eine Fehlermeldung \u2013 das ist normal und " +
-      "heißt nicht, dass etwas schiefgegangen ist.",
+      "Schritten weiter: erst die Teilnahme bestätigen, dann im Play Store " +
+      "öffnen und installieren. Vorher zeigen beide Links nur eine " +
+      "Fehlermeldung \u2013 das ist normal und heißt nicht, dass etwas " +
+      "schiefgegangen ist.",
     homeHeading: "Vom ersten Satz bis zu hundert am Stück",
     homeLead: "Ein Trainingsplan über 40 Level – auf dem Handy oder im Browser.",
     homeMobileTitle: "Auf dem Handy",
@@ -372,14 +373,16 @@ const STRINGS = {
     betaAgain: "Sign up again anyway",
     betaLinksTitle: "Your links to the test",
     betaLinksBody:
-      "First accept the invitation, then install. As long as your address has " +
-      "not been added, both links show an error \u2013 that is normal.",
+      "First accept the invitation, then open it in the Play Store and " +
+      "install. As long as your address has not been added, both links show an " +
+      "error \u2013 that is normal.",
     betaNeedMail: "Please enter a valid address.",
     betaNeedVersion: "Pick at least one version.",
     betaDoneBody:
       "Thank you. Once your address has been added, it takes two steps: first " +
-      "accept the invitation, then install. Before that both links only show " +
-      "an error \u2013 that is normal and does not mean anything went wrong.",
+      "accept the invitation, then open it in the Play Store and install. " +
+      "Before that both links only show an error \u2013 that is normal and does " +
+      "not mean anything went wrong.",
     homeHeading: "From your first set to a hundred in a row",
     homeLead: "A 40-level training plan – on your phone or in the browser.",
     homeMobileTitle: "On your phone",
