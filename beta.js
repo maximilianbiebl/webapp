@@ -45,16 +45,23 @@ const OPT_IN = {
  * sagt das auch - lieber eine ehrliche Fehlermeldung als ein Knopf, der zu
  * funktionieren scheint und ins Leere schickt.
  * -------------------------------------------------------------------------- */
-const FORMULAR_ID = "HIER_FORMULAR_ID_EINTRAGEN";
+const FORMULAR_ID = "1FAIpQLSeHqRGOQ82LRwETANeBYwqMIwxhSSezZ_ShQTP8LOr_8XEzvA";
 const FELD = {
-  adresse: "entry.000000001",
-  fassung: "entry.000000002",
-  sprache: "entry.000000003",
+  adresse: "entry.1982956174",  // Kurzantwort
+  fassung: "entry.2009197099",  // Kaestchen, Optionen: free, paid
+  sprache: "entry.1380673216",  // Multiple-Choice, Optionen: de, en
 };
 
 const FORMULAR_BEREIT =
   !FORMULAR_ID.startsWith("HIER_") &&
   !Object.values(FELD).some((feld) => feld.includes("00000000"));
+
+/*
+ * Die Werte muessen den Beschriftungen im Formular aufs Zeichen entsprechen -
+ * Google ordnet Antworten ueber den Text zu, nicht ueber eine Nummer. Deshalb
+ * stehen sie hier als Konstanten und nicht verstreut im Code.
+ */
+const WERT = { free: "free", paid: "paid" };
 
 function applyTranslations() {
   document.documentElement.lang = getLanguage() === "en" ? "en" : "de";
@@ -137,7 +144,11 @@ form.addEventListener("submit", async (ereignis) => {
   knopf.disabled = true;
   const felder = new URLSearchParams();
   felder.set(FELD.adresse, adresse.toLowerCase());
-  felder.set(FELD.fassung, [free && "free", paid && "paid"].filter(Boolean).join(" + "));
+  // Kaestchen: jede Auswahl ist ein eigener Eintrag unter demselben Schluessel.
+  // Zusammengefuegt - "free + paid" - waere es fuer Google keine der beiden
+  // Optionen und fiele unter den Tisch.
+  if (free) felder.append(FELD.fassung, WERT.free);
+  if (paid) felder.append(FELD.fassung, WERT.paid);
   // resolveLanguage statt getLanguage: Letzteres liefert "system", wenn nichts
   // eingestellt ist - als Angabe waere das wertlos.
   felder.set(FELD.sprache, resolveLanguage());

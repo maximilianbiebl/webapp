@@ -26,11 +26,11 @@ const STRINGS = {
     // Start- und Anmeldeseite
     brand: "Liegestütze",
     betaTitle: "Zum Betatest anmelden",
-    betaTeaserTitle: "Beide Apps sind gerade im Betatest",
+    betaTeaserTitle: "Am Betatest teilnehmen",
     betaTeaserBody:
-      "Der Play-Store zeigt sie nur, wenn deine Adresse vorher freigeschaltet " +
-      "ist. Auf der Betaseite siehst du, worum es geht, und kannst dich in " +
-      "einem Schritt anmelden.",
+      "Die App steht noch nicht öffentlich im Play-Store \u2013 der Zugang läuft " +
+      "über eine Testerliste. Auf der Betaseite siehst du, was dich erwartet, " +
+      "und meldest dich in einem Schritt an.",
     betaTeaserButton: "Zum Betatest",
     betaFormTitle: "Anmeldung",
     betaTapHint: "Zum Vergrößern antippen.",
@@ -55,10 +55,10 @@ const STRINGS = {
     betaPaidTitle: "Liegestütze",
     betaPaidBody:
       "Alles aus der Gratisfassung, dazu Konto, Gruppen und Freunde \u2013 mit " +
-      "gemeinsamer Bestenliste und Direktvergleich.",
+      "gemeinsamer Bestenliste und Direktvergleich. Im Betatest kostenlos.",
     betaWhich: "Wofür möchtest du dich anmelden?",
     betaFreeLabel: "Liegestütze Free",
-    betaPaidLabel: "Liegestütze (mit Gruppen und Freunden)",
+    betaPaidLabel: "Liegestütze mit Gruppen und Freunden – im Test kostenlos",
     betaMailLabel: "Deine Google-Adresse",
     betaMailPlaceholder: "name@gmail.com",
     betaMailHint:
@@ -312,10 +312,11 @@ const STRINGS = {
   en: {
     brand: "Push-Ups",
     betaTitle: "Join the beta test",
-    betaTeaserTitle: "Both apps are in a beta test right now",
+    betaTeaserTitle: "Join the beta test",
     betaTeaserBody:
-      "The Play Store only shows them once your address has been added. The " +
-      "beta page shows what they look like and lets you sign up in one step.",
+      "The app is not public in the Play Store yet \u2013 access runs through a " +
+      "tester list. The beta page shows what to expect and lets you sign up in " +
+      "one step.",
     betaTeaserButton: "To the beta test",
     betaFormTitle: "Sign up",
     betaTapHint: "Tap to enlarge.",
@@ -340,10 +341,11 @@ const STRINGS = {
     betaPaidTitle: "Push-Ups",
     betaPaidBody:
       "Everything from the free version, plus an account, groups and friends \u2013 " +
-      "with a shared leaderboard and head-to-head comparison.",
+      "with a shared leaderboard and head-to-head comparison. Free during the " +
+      "beta test.",
     betaWhich: "Which one would you like?",
     betaFreeLabel: "Push-Ups Free",
-    betaPaidLabel: "Push-Ups (with groups and friends)",
+    betaPaidLabel: "Push-Ups with groups and friends – free during the test",
     betaMailLabel: "Your Google address",
     betaMailPlaceholder: "name@gmail.com",
     betaMailHint:
