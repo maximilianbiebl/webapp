@@ -46,8 +46,15 @@ function applyTranslations() {
   document.documentElement.lang = getLanguage() === "en" ? "en" : "de";
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const text = t(el.dataset.i18n);
+    // Mit data-i18n-attr ist die Uebersetzung fuer ein Attribut gedacht, nicht
+    // fuer den sichtbaren Inhalt. Beides zu setzen hat das Zahnrad im
+    // Einstellungen-Knopf ueberschrieben: Der Server lieferte das Symbol, und
+    // der erste Durchlauf hier ersetzte es durch das Wort.
+    if (el.dataset.i18nAttr) {
+      el.setAttribute(el.dataset.i18nAttr, text);
+      return;
+    }
     el.textContent = text;
-    if (el.dataset.i18nAttr) el.setAttribute(el.dataset.i18nAttr, text);
   });
 }
 
