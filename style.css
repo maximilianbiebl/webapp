@@ -10,14 +10,23 @@
  * --accent-contrast ist die Farbe für Text und Symbole auf einer Flaeche in
  * --accent - hier immer dunkel, weil der Akzent hell ist.
  */
+/*
+ * Ein durchgehend neutrales Grau.
+ *
+ * Vorher lag der Seitengrund bei genau 0 % Saettigung, jede erhoehte Flaeche
+ * dagegen bei 3 bis 8 % im Magenta zwischen 300 und 340 Grad - uebernommen aus
+ * der Standardpalette von Material, nicht gewaehlt. Nebeneinander sieht das
+ * aus wie ein lila Schleier ueber allem, was nicht der nackte Hintergrund ist.
+ * Die Helligkeiten sind unveraendert, nur der Farbstich ist heraus.
+ */
 :root {
-  --accent: #f2f0ee;
-  --accent-contrast: #17161a;
+  --accent: #f1f1f1;
+  --accent-contrast: #171717;
   --bg: #121212;
-  --card: #201e20;
-  --ink: #eae7e8;
-  --muted: #a8a3a5;
-  --line: #3a3436;
+  --card: #1f1f1f;
+  --ink: #e8e8e8;
+  --muted: #a5a5a5;
+  --line: #373737;
   --danger: #ff8a80;
   --radius: 20px;
 }
@@ -357,13 +366,13 @@ input[type="range"]::-moz-range-thumb {
  * und in einer sonst grauen Oberflaeche faellt er aus dem Rahmen.
  */
 #workout.resting {
-  background: #2e2a2c;
-  color: #cfc7ca;
+  background: #2c2c2c;
+  color: #cbcbcb;
 }
 /* Auf dem helleren Grund traegt die Linienfarbe des dunklen Designs nicht. */
 #workout.resting .chip,
-#workout.resting .ghost { border-color: rgba(207, 199, 202, 0.45); color: #cfc7ca; }
-#workout.resting .setline { color: #cfc7ca; }
+#workout.resting .ghost { border-color: rgba(203, 203, 203, 0.45); color: #cbcbcb; }
+#workout.resting .setline { color: #cbcbcb; }
 #workout.resting .setline.ready { color: var(--ink); }
 #workout.resting .count { color: var(--ink); }
 
