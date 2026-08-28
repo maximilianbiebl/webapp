@@ -346,22 +346,26 @@ input[type="range"]::-moz-range-thumb {
 #workout.open { display: flex; }
 #workout.hot { background: var(--accent); color: var(--accent-contrast); }
 /*
- * Die Pause hebt sich ab, wie in der App. Die beiden Werte sind nicht
- * geschaetzt, sondern die, die Material dort tatsaechlich einsetzt:
- * secondaryContainer und onSecondaryContainer des dunklen Schemas, also
- * Secondary30 und Secondary90 der Palette. Ein blasses Grau reichte nicht -
- * ein Bildschirm, auf dem nichts zu tun ist, soll auf den ersten Blick anders
- * aussehen als einer, auf dem gezaehlt wird.
+ * Die Pause hebt sich ab: Ein Bildschirm, auf dem nichts zu tun ist, soll auf
+ * den ersten Blick anders aussehen als einer, auf dem gezaehlt wird.
+ *
+ * Die Werte stammen aus den Flaechenfarben, die Theme.kt ausdruecklich waehlt
+ * - surfaceVariant und onSurfaceVariant des dunklen Schemas. Vorher stand hier
+ * das Violett aus Materials secondaryContainer, weil die App die Pause damit
+ * faerbt. Das war ein Trugschluss: Theme.kt setzt secondaryContainer gar
+ * nicht, der Farbton ist also blosse Voreinstellung und nirgends gewaehlt -
+ * und in einer sonst grauen Oberflaeche faellt er aus dem Rahmen.
  */
 #workout.resting {
-  background: #4a4458;
-  color: #e8def8;
+  background: #2e2a2c;
+  color: #cfc7ca;
 }
 /* Auf dem helleren Grund traegt die Linienfarbe des dunklen Designs nicht. */
 #workout.resting .chip,
-#workout.resting .ghost { border-color: rgba(232, 222, 248, 0.45); color: #e8def8; }
-#workout.resting .setline { color: #e8def8; }
-#workout.resting .setline.ready { color: #fff; }
+#workout.resting .ghost { border-color: rgba(207, 199, 202, 0.45); color: #cfc7ca; }
+#workout.resting .setline { color: #cfc7ca; }
+#workout.resting .setline.ready { color: var(--ink); }
+#workout.resting .count { color: var(--ink); }
 
 /* Leere Zeilen sollen keinen Platz belegen - in der Pause steht kein Hinweis. */
 #workout .setline:empty { display: none; }
